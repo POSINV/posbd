@@ -1,0 +1,910 @@
+{
+  "info": {
+    "name": "POS Platform API",
+    "_postman_id": "3f6a1e2e-7c1a-4b7a-9d3a-posbd-api-collection",
+    "description": "Universal Retail Business Management Platform - backend JSON API (posbd). Organized by domain module; new modules (products, inventory, billing, ...) get their own folder as they're built. Auth uses a Bearer token returned by register/login; tenant-scoped requests also need the `x-business-id` header, set automatically by the 'Create Business' request's test script.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4002/api/v1" },
+    { "key": "auth_token", "value": "" },
+    { "key": "business_id", "value": "" },
+    { "key": "category_id", "value": "" },
+    { "key": "product_id", "value": "" },
+    { "key": "variant_product_id", "value": "" },
+    { "key": "variant_id", "value": "" },
+    { "key": "price_tier_id", "value": "" },
+    { "key": "customer_id", "value": "" },
+    { "key": "invoice_id", "value": "" },
+    { "key": "user_email", "value": "owner@example.com" },
+    { "key": "user_password", "value": "supersecret1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\",\n    \"full_name\": \"Store Owner\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('auth_token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('auth_token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "Current User (me)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/me", "host": ["{{base_url}}"], "path": ["me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Businesses",
+      "item": [
+        {
+          "name": "List Business Type Templates",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/business_types", "host": ["{{base_url}}"], "path": ["business_types"] }
+          }
+        },
+        {
+          "name": "List My Businesses",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/businesses", "host": ["{{base_url}}"], "path": ["businesses"] }
+          }
+        },
+        {
+          "name": "Create Business (Onboarding step 1)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business\": {\n    \"name\": \"Sam's Clothing\",\n    \"business_type\": \"clothing\",\n    \"country\": \"IN\",\n    \"currency\": \"INR\",\n    \"timezone\": \"Asia/Kolkata\",\n    \"language\": \"en\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/businesses", "host": ["{{base_url}}"], "path": ["businesses"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('business_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Business",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["businesses", "{{business_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Business Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business\": {\n    \"currency\": \"USD\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["businesses", "{{business_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Invoice / Print Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business\": {\n    \"address\": \"12 MG Road, Bengaluru\",\n    \"phone\": \"9876543210\",\n    \"email\": \"shop@example.com\",\n    \"tax_number\": \"29ABCDE1234F1Z5\",\n    \"invoice_prefix\": \"INV-\",\n    \"invoice_footer\": \"Thank you for shopping with us!\",\n    \"invoice_terms\": \"Goods once sold will not be taken back.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["businesses", "{{business_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Complete Onboarding",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}/complete_onboarding",
+              "host": ["{{base_url}}"],
+              "path": ["businesses", "{{business_id}}", "complete_onboarding"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Tenant-scoped: every request here requires the x-business-id header (set automatically once you run Businesses > Create Business).",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"category\": {\n    \"name\": \"Men's Wear\"\n  }\n}" },
+            "url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('category_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Category",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"category\": {\n    \"name\": \"Menswear\"\n  }\n}" },
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Tenant-scoped: every request here requires the x-business-id header.",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/products?search=&page=1&page_size=25",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Product (no variants)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": {\n    \"name\": \"Red Saree\",\n    \"category_id\": \"{{category_id}}\",\n    \"unit\": \"pcs\",\n    \"purchase_price\": \"800.00\",\n    \"selling_price\": \"1200.00\",\n    \"mrp\": \"1500.00\",\n    \"tax_rate\": \"5\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('product_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Product (has variants)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": {\n    \"name\": \"Cotton T-Shirt\",\n    \"category_id\": \"{{category_id}}\",\n    \"has_variants\": true,\n    \"unit\": \"pcs\",\n    \"tax_rate\": \"5\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('variant_product_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"product\": {\n    \"selling_price\": \"1250.00\"\n  }\n}" },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Variant (Size/Color)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant\": {\n    \"sku\": \"TSHIRT-RED-M\",\n    \"barcode\": \"8901234567890\",\n    \"purchase_price\": \"150.00\",\n    \"selling_price\": \"299.00\",\n    \"mrp\": \"349.00\",\n    \"attributes\": {\n      \"Size\": \"M\",\n      \"Color\": \"Red\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{variant_product_id}}/variants",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{variant_product_id}}", "variants"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('variant_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Variant",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant\": {\n    \"selling_price\": \"279.00\",\n    \"attributes\": {\n      \"Size\": \"L\",\n      \"Color\": \"Red\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{variant_product_id}}/variants/{{variant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{variant_product_id}}", "variants", "{{variant_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Variant",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/products/{{variant_product_id}}/variants/{{variant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{variant_product_id}}", "variants", "{{variant_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attributes",
+      "description": "Tenant-scoped, read-only: attributes/values are created implicitly via Product Variant create/update.",
+      "item": [
+        {
+          "name": "List Attributes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": { "raw": "{{base_url}}/attributes", "host": ["{{base_url}}"], "path": ["attributes"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing",
+      "description": "Tenant-scoped. A price tier belongs to exactly one of a product (product_id) or a variant (variant_id); price_tiers/quote resolves the applicable unit price for a given quantity/date, the same lookup Billing will use later.",
+      "item": [
+        {
+          "name": "List Price Tiers (for a product)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/price_tiers?product_id={{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["price_tiers"],
+              "query": [{ "key": "product_id", "value": "{{product_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Create Price Tier (Wholesale, qty 10+)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price_tier\": {\n    \"product_id\": \"{{product_id}}\",\n    \"label\": \"Wholesale\",\n    \"min_quantity\": 10,\n    \"price\": \"900.00\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/price_tiers", "host": ["{{base_url}}"], "path": ["price_tiers"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('price_tier_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Price Tier",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"price_tier\": {\n    \"price\": \"850.00\"\n  }\n}" },
+            "url": {
+              "raw": "{{base_url}}/price_tiers/{{price_tier_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["price_tiers", "{{price_tier_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Price Tier",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/price_tiers/{{price_tier_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["price_tiers", "{{price_tier_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Quote Price (resolve unit price for a quantity)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/price_tiers/quote?product_id={{product_id}}&quantity=12",
+              "host": ["{{base_url}}"],
+              "path": ["price_tiers", "quote"],
+              "query": [
+                { "key": "product_id", "value": "{{product_id}}" },
+                { "key": "quantity", "value": "12" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "description": "Tenant-scoped. Every stock change goes through POST /inventory/movements - opening stock is just a movement with movement_type=opening_stock. Stock is never edited directly.",
+      "item": [
+        {
+          "name": "Record Opening Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"opening_stock\",\n    \"direction\": \"in\",\n    \"quantity\": 50,\n    \"reference\": \"Opening balance\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+          }
+        },
+        {
+          "name": "Record Purchase (stock in)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"purchase\",\n    \"direction\": \"in\",\n    \"quantity\": 20,\n    \"reference\": \"PO-1023\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+          }
+        },
+        {
+          "name": "Record Sale (stock out)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"sale\",\n    \"direction\": \"out\",\n    \"quantity\": 1,\n    \"reference\": \"INV-2044\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+          }
+        },
+        {
+          "name": "Record Adjustment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"adjustment\",\n    \"direction\": \"out\",\n    \"quantity\": 2,\n    \"notes\": \"Damaged in storage\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+          }
+        },
+        {
+          "name": "List Movement History (for a product)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/inventory/movements?product_id={{product_id}}&page=1&page_size=25",
+              "host": ["{{base_url}}"],
+              "path": ["inventory", "movements"],
+              "query": [
+                { "key": "product_id", "value": "{{product_id}}" },
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "25" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "description": "Tenant-scoped.",
+      "item": [
+        {
+          "name": "List / Search Customers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/customers?search=",
+              "host": ["{{base_url}}"],
+              "path": ["customers"],
+              "query": [{ "key": "search", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"9998887777\",\n    \"email\": \"priya@example.com\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/customers", "host": ["{{base_url}}"], "path": ["customers"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('customer_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Customer",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"customer\": {\n    \"address\": \"12 MG Road, Bengaluru\"\n  }\n}" },
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "description": "Tenant-scoped. POST /invoices computes all pricing/tax/discount server-side from product_id/variant_id + quantity - never send a price. Passing the same idempotency_key twice returns the original invoice instead of creating a duplicate.",
+      "item": [
+        {
+          "name": "Create Invoice (walk-in, cash)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"product_id\": \"{{product_id}}\", \"quantity\": 2 }\n  ],\n  \"payments\": [\n    { \"method\": \"cash\", \"amount\": \"220.00\" }\n  ],\n  \"idempotency_key\": \"{{$guid}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/invoices", "host": ["{{base_url}}"], "path": ["invoices"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('invoice_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Invoice (registered customer, with discount + partial payment)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"{{customer_id}}\",\n  \"items\": [\n    { \"product_id\": \"{{product_id}}\", \"quantity\": 3, \"discount_amount\": \"10.00\" }\n  ],\n  \"payments\": [\n    { \"method\": \"upi\", \"amount\": \"100.00\", \"reference\": \"UPI-REF-001\" }\n  ],\n  \"notes\": \"Loyal customer\",\n  \"idempotency_key\": \"{{$guid}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/invoices", "host": ["{{base_url}}"], "path": ["invoices"] }
+          }
+        },
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/invoices?page=1&page_size=25",
+              "host": ["{{base_url}}"],
+              "path": ["invoices"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show Invoice",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{invoice_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Record Additional Payment (settle a partial/credit sale)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment\": {\n    \"method\": \"cash\",\n    \"amount\": \"50.00\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{invoice_id}}", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Cancel / Void Invoice",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{invoice_id}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "Tenant-scoped, read-only. from/to are inclusive YYYY-MM-DD dates in the business's own timezone.",
+      "item": [
+        {
+          "name": "Sales Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/sales_summary?from={{$isoTimestamp}}&to={{$isoTimestamp}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "sales_summary"],
+              "query": [
+                { "key": "from", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-01" },
+                { "key": "to", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-23" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daily Sales (dashboard trend)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/daily_sales?from={{$isoTimestamp}}&to={{$isoTimestamp}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "daily_sales"],
+              "query": [
+                { "key": "from", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-17" },
+                { "key": "to", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-23" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top Products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/top_products?from={{$isoTimestamp}}&to={{$isoTimestamp}}&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "top_products"],
+              "query": [
+                { "key": "from", "value": "{{$isoTimestamp}}" },
+                { "key": "to", "value": "{{$isoTimestamp}}" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Current Stock",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/stock",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "stock"]
+            }
+          }
+        },
+        {
+          "name": "Low Stock Only",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/stock?low_stock_only=true",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "stock"],
+              "query": [{ "key": "low_stock_only", "value": "true" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

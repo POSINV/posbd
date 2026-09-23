@@ -42,6 +42,10 @@ defmodule PosbdWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
+  plug CORSPlug,
+    origin: &PosbdWeb.CORS.allowed_origins/0,
+    headers: Enum.uniq(["x-business-id" | CORSPlug.defaults()[:headers]])
+
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],

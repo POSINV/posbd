@@ -11,6 +11,10 @@ config :posbd,
   ecto_repos: [Posbd.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Business-local report date ranges (e.g. "today") need real IANA time
+# zone rules to convert to/from UTC correctly (see AGENTS.md §22).
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
 # Configures the endpoint
 config :posbd, PosbdWeb.Endpoint,
   url: [host: "localhost"],

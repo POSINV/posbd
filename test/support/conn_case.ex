@@ -35,4 +35,20 @@ defmodule PosbdWeb.ConnCase do
     Posbd.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Builds a fresh conn authenticated as the scope's user and scoped to
+  their business. `Phoenix.ConnTest`'s request helpers only recycle the
+  `authorization` header between chained calls (not custom ones), so
+  tests that issue several tenant-scoped requests in a row should build
+  a fresh conn per request with this helper rather than reusing the conn
+  returned by a previous request.
+  """
+  def authed_conn(scope) do
+    token = Posbd.Accounts.create_api_token(scope.user)
+
+    Phoenix.ConnTest.build_conn()
+    |> Plug.Conn.put_req_header("authorization", "Bearer #{token}")
+    |> Plug.Conn.put_req_header("x-business-id", scope.business.id)
+  end
 end

@@ -1,0 +1,71 @@
+defmodule Posbd.Businesses do
+  @moduledoc """
+  Business (tenant) creation/onboarding and membership management.
+
+  Every function that reads or writes tenant-scoped data takes a
+  `%Scope{}` and filters by the scope's business/user, so a caller can
+  never reach another tenant's rows just by guessing an id.
+  """
+
+  import Ecto.Query, warn: false
+
+  alias Posbd.Repo
+  alias Posbd.Accounts.Scope
+  alias Posbd.Businesses.{Business, Membership}
+
+  @doc "Lists the businesses the scope's user belongs to, with their role."
+  def list_businesses_for_user(%Scope{user: user}) do
+    from(b in Business,
+      join: m in Membership,
+      on: m.business_id == b.id,
+      where: m.user_id == ^user.id,
+      order_by: [asc: b.inserted_at],
+      select: {b, m.role}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Creates a new business and makes the scope's user its owner, in a
+  single transaction so a partially-created tenant can never exist.
+  """
+  def create_business(%Scope{user: user}, attrs) do
+    Repo.transact(fn ->
+      with {:ok, business} <- %Business{} |> Business.changeset(attrs) |> Repo.insert(),
+           {:ok, _membership} <-
+             %Membership{}
+             |> Membership.owner_changeset(business.id, user.id)
+             |> Repo.insert() do
+        {:ok, business}
+      end
+    end)
+  end
+
+  @doc "Fetches a business for the scope's user, returning nil if not a member."
+  def get_business_for_user(%Scope{user: user}, business_id) do
+    from(b in Business,
+      join: m in Membership,
+      on: m.business_id == b.id,
+      where: b.id == ^business_id and m.user_id == ^user.id,
+      select: {b, m}
+    )
+    |> Repo.one()
+  end
+
+  def update_business(%Business{} = business, attrs) do
+    business
+    |> Business.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def complete_onboarding(%Business{} = business) do
+    business
+    |> Business.complete_onboarding_changeset()
+    |> Repo.update()
+  end
+
+  @doc "Loads the scope's membership for the given business, or nil."
+  def get_membership(%Scope{user: user}, business_id) do
+    Repo.get_by(Membership, business_id: business_id, user_id: user.id)
+  end
+end
