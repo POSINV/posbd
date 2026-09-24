@@ -905,6 +905,191 @@
           }
         }
       ]
+    },
+    {
+      "name": "Bulk Import",
+      "description": "Tenant-scoped. Two-step flow: POST .../preview (multipart file upload) validates every row without writing anything and returns per-row errors; POST .../commit (JSON) takes back exactly the rows you choose to keep (the 'fields' from each valid preview row, plus its row_number) and creates them. Products/opening stock are scoped to simple (non-variant) products for now. Historical Bills rows are grouped by invoice_number into one invoice per group and never touch inventory - run Products and Opening Stock first so every SKU already exists.",
+      "item": [
+        {
+          "name": "Download Product Import Template",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/imports/products/template",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "products", "template"]
+            }
+          }
+        },
+        {
+          "name": "Preview Product Import",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{base_url}}/imports/products/preview",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "products", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Commit Product Import",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rows\": [\n    {\n      \"row_number\": 1,\n      \"name\": \"Cotton T-Shirt\",\n      \"category\": \"Men's Wear\",\n      \"sku\": \"TS-001\",\n      \"selling_price\": \"299.00\",\n      \"purchase_price\": \"150.00\",\n      \"opening_stock\": \"25\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/imports/products/commit",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "products", "commit"]
+            }
+          }
+        },
+        {
+          "name": "Download Opening Stock Import Template",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/imports/opening_stock/template",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "opening_stock", "template"]
+            }
+          }
+        },
+        {
+          "name": "Preview Opening Stock Import",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{base_url}}/imports/opening_stock/preview",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "opening_stock", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Commit Opening Stock Import",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rows\": [\n    {\n      \"row_number\": 1,\n      \"sku\": \"TS-001\",\n      \"quantity\": \"50\",\n      \"purchase_price\": \"150.00\",\n      \"selling_price\": \"299.00\",\n      \"reference\": \"Opening balance\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/imports/opening_stock/commit",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "opening_stock", "commit"]
+            }
+          }
+        },
+        {
+          "name": "Download Historical Bills Import Template",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/imports/historical_bills/template",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "historical_bills", "template"]
+            }
+          }
+        },
+        {
+          "name": "Preview Historical Bills Import",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{base_url}}/imports/historical_bills/preview",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "historical_bills", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Commit Historical Bills Import",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rows\": [\n    {\n      \"row_number\": 1,\n      \"invoice_number\": \"OLD-1001\",\n      \"date\": \"2025-01-15\",\n      \"customer_name\": \"Ramesh Kumar\",\n      \"customer_phone\": \"9876500000\",\n      \"sku\": \"TS-001\",\n      \"quantity\": \"2\",\n      \"unit_price\": \"299.00\",\n      \"discount_amount\": \"0\",\n      \"tax_amount\": \"0\",\n      \"amount_paid\": \"598.00\",\n      \"payment_method\": \"cash\",\n      \"notes\": \"Migrated from old system\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/imports/historical_bills/commit",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "historical_bills", "commit"]
+            }
+          }
+        },
+        {
+          "name": "Import History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/imports/history",
+              "host": ["{{base_url}}"],
+              "path": ["imports", "history"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "description": "Tenant-scoped, read-only. Requires the 'audit.view' permission (owner/admin only). Records product created/updated/price-changed/deleted, business settings updated, invoice created/cancelled, manual stock adjustments, and bulk imports performed. Filterable by action, entity_type, and from/to (YYYY-MM-DD, inclusive).",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/audit_logs?page=1&page_size=25",
+              "host": ["{{base_url}}"],
+              "path": ["audit_logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "25" },
+                { "key": "action", "value": "", "disabled": true },
+                { "key": "entity_type", "value": "", "disabled": true },
+                { "key": "from", "value": "", "disabled": true },
+                { "key": "to", "value": "", "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

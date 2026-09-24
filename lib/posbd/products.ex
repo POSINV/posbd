@@ -9,6 +9,7 @@ defmodule Posbd.Products do
 
   import Ecto.Query, warn: false
 
+  alias Posbd.AuditLogs
   alias Posbd.Repo
   alias Posbd.Accounts.Scope
   alias Posbd.Products.{Attribute, AttributeValue, Product, ProductVariant, VariantAttributeValue}
@@ -94,20 +95,70 @@ defmodule Posbd.Products do
     end
   end
 
-  def create_product(%Scope{business: business}, attrs) do
+  def create_product(%Scope{business: business} = scope, attrs) do
     %Product{business_id: business.id}
     |> Product.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, product} = ok ->
+        AuditLogs.record(scope, "product.created", "Product", product.id, %{
+          name: product.name,
+          sku: product.sku
+        })
+
+        ok
+
+      error ->
+        error
+    end
   end
 
-  def update_product(%Product{} = product, attrs) do
-    product
-    |> Product.changeset(attrs)
-    |> Repo.update()
+  @price_fields [:purchase_price, :selling_price, :mrp]
+
+  def update_product(%Scope{} = scope, %Product{} = product, attrs) do
+    changeset = Product.changeset(product, attrs)
+
+    case Repo.update(changeset) do
+      {:ok, updated} = ok ->
+        log_product_update(scope, product, updated, changeset)
+        ok
+
+      error ->
+        error
+    end
   end
 
-  def delete_product(%Product{} = product) do
-    Repo.delete(product)
+  defp log_product_update(scope, before, updated, changeset) do
+    changed_price_fields = Enum.filter(@price_fields, &Map.has_key?(changeset.changes, &1))
+
+    if changed_price_fields == [] do
+      AuditLogs.record(scope, "product.updated", "Product", updated.id, %{})
+    else
+      changes =
+        Map.new(changed_price_fields, fn field ->
+          {field, %{from: money(Map.get(before, field)), to: money(Map.get(updated, field))}}
+        end)
+
+      AuditLogs.record(scope, "product.price_changed", "Product", updated.id, changes)
+    end
+  end
+
+  defp money(nil), do: nil
+  defp money(%Decimal{} = decimal), do: Decimal.to_string(decimal)
+
+  def delete_product(%Scope{} = scope, %Product{} = product) do
+    case Repo.delete(product) do
+      {:ok, deleted} = ok ->
+        AuditLogs.record(scope, "product.deleted", "Product", deleted.id, %{
+          name: deleted.name,
+          sku: deleted.sku
+        })
+
+        ok
+
+      error ->
+        error
+    end
   end
 
   ## Variants

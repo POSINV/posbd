@@ -31,6 +31,14 @@ defmodule Posbd.Customers do
     Repo.get_by(Customer, id: id, business_id: business.id)
   end
 
+  @doc "Finds a customer by exact phone match, or `nil`. Used by historical bill migration to avoid creating duplicate customers on re-import."
+  def find_by_phone(_scope, nil), do: nil
+  def find_by_phone(_scope, ""), do: nil
+
+  def find_by_phone(%Scope{business: business}, phone) do
+    Repo.get_by(Customer, business_id: business.id, phone: phone)
+  end
+
   def create_customer(%Scope{business: business}, attrs) do
     %Customer{business_id: business.id}
     |> Customer.changeset(attrs)

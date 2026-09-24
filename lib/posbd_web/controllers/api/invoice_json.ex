@@ -17,6 +17,7 @@ defmodule PosbdWeb.Api.InvoiceJSON do
       invoice_number: invoice.invoice_number,
       status: invoice.status,
       payment_status: invoice.payment_status,
+      source: invoice.source,
       currency: invoice.currency,
       total_amount: ProductJSON.money(invoice.total_amount),
       amount_paid: ProductJSON.money(invoice.amount_paid),

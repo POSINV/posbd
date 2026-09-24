@@ -10,6 +10,7 @@ defmodule Posbd.Inventory do
 
   import Ecto.Query, warn: false
 
+  alias Posbd.AuditLogs
   alias Posbd.Repo
   alias Posbd.Accounts.Scope
   alias Posbd.Inventory.InventoryTransaction
@@ -22,31 +23,55 @@ defmodule Posbd.Inventory do
   `movement_type`, `direction` ("in"/"out"), and `quantity` (a positive
   integer); `reference`, `notes`, and `occurred_at` are optional.
   """
-  def record_movement(%Scope{business: business, user: user}, target, attrs) do
+  def record_movement(%Scope{business: business, user: user} = scope, target, attrs) do
     delta = signed_delta(attrs)
 
-    Repo.transact(fn ->
-      changeset_attrs =
-        attrs
-        |> Map.new(fn {k, v} -> {to_string(k), v} end)
-        |> Map.merge(%{
-          "business_id" => business.id,
-          "performed_by_id" => user.id,
-          target_key(target) => target.id
-        })
+    result =
+      Repo.transact(fn ->
+        changeset_attrs =
+          attrs
+          |> Map.new(fn {k, v} -> {to_string(k), v} end)
+          |> Map.merge(%{
+            "business_id" => business.id,
+            "performed_by_id" => user.id,
+            target_key(target) => target.id
+          })
 
-      with {:ok, transaction} <-
-             %InventoryTransaction{}
-             |> InventoryTransaction.changeset(changeset_attrs)
-             |> Repo.insert(),
-           {1, _} <- adjust_stock(target, delta) do
-        {:ok, Repo.preload(transaction, :performed_by)}
-      else
-        {:error, _} = error -> error
-        _ -> {:error, :stock_update_failed}
-      end
-    end)
+        with {:ok, transaction} <-
+               %InventoryTransaction{}
+               |> InventoryTransaction.changeset(changeset_attrs)
+               |> Repo.insert(),
+             {1, _} <- adjust_stock(target, delta) do
+          {:ok, Repo.preload(transaction, :performed_by)}
+        else
+          {:error, _} = error -> error
+          _ -> {:error, :stock_update_failed}
+        end
+      end)
+
+    case result do
+      {:ok, transaction} = ok ->
+        # Only manual corrections are audited here - sales/returns/opening
+        # stock already have their own trail (invoice, import log) and the
+        # InventoryTransaction row itself, so logging every movement would
+        # just duplicate that instead of adding signal.
+        if transaction.movement_type == "adjustment" do
+          AuditLogs.record(scope, "inventory.adjusted", entity_type(target), target.id, %{
+            direction: transaction.direction,
+            quantity: transaction.quantity,
+            notes: transaction.notes
+          })
+        end
+
+        ok
+
+      error ->
+        error
+    end
   end
+
+  defp entity_type(%Product{}), do: "Product"
+  defp entity_type(%ProductVariant{}), do: "ProductVariant"
 
   defp signed_delta(%{"direction" => "out", "quantity" => qty}), do: -qty
   defp signed_delta(%{direction: "out", quantity: qty}), do: -qty

@@ -49,8 +49,11 @@ defmodule Posbd.Seeds do
         language: "en"
       })
 
+    membership = Businesses.get_membership(user_scope, business.id)
+    scope = Scope.put_business(user_scope, business, membership)
+
     {:ok, business} =
-      Businesses.update_business(business, %{
+      Businesses.update_business(scope, business, %{
         address: spec.address,
         phone: spec.phone,
         email: spec.business_email,
@@ -61,10 +64,7 @@ defmodule Posbd.Seeds do
         default_print_layout: spec[:default_print_layout] || "thermal"
       })
 
-    {:ok, _} = Businesses.complete_onboarding(business)
-
-    membership = Businesses.get_membership(user_scope, business.id)
-    scope = Scope.put_business(user_scope, business, membership)
+    {:ok, _} = Businesses.complete_onboarding(scope, business)
 
     categories =
       Map.new(spec.categories, fn name ->

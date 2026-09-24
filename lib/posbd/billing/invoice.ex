@@ -7,11 +7,16 @@ defmodule Posbd.Billing.Invoice do
 
   @statuses ~w(completed cancelled)
   @payment_statuses ~w(unpaid partial paid)
+  @sources ~w(pos migrated)
 
   schema "invoices" do
     field :invoice_number, :string
     field :status, :string, default: "completed"
     field :payment_status, :string, default: "unpaid"
+    # "migrated" marks a historical invoice brought in via bulk import
+    # (AGENTS.md §14/§27) - it was never charged against live inventory,
+    # so cancelling one must never restore stock (see Billing.cancel_invoice).
+    field :source, :string, default: "pos"
     field :currency, :string
 
     field :subtotal, :decimal
@@ -36,6 +41,7 @@ defmodule Posbd.Billing.Invoice do
 
   def statuses, do: @statuses
   def payment_statuses, do: @payment_statuses
+  def sources, do: @sources
 
   @doc """
   Builds the changeset for a fully-computed invoice. Every field here is
@@ -57,8 +63,9 @@ defmodule Posbd.Billing.Invoice do
     ])
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:payment_status, @payment_statuses)
-    |> unique_constraint([:business_id, :invoice_number])
-    |> unique_constraint([:business_id, :idempotency_key])
+    |> validate_inclusion(:source, @sources)
+    |> unique_constraint([:business_id, :invoice_number], error_key: :invoice_number)
+    |> unique_constraint([:business_id, :idempotency_key], error_key: :idempotency_key)
   end
 
   def status_changeset(invoice, status) do

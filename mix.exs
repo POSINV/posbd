@@ -63,6 +63,7 @@ defmodule Posbd.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:cors_plug, "~> 3.0"},
       {:tzdata, "~> 1.1"},
+      {:nimble_csv, "~> 1.2"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.26"},

@@ -1,6 +1,7 @@
 defmodule PosbdWeb.Api.BusinessController do
   use PosbdWeb, :controller
 
+  alias Posbd.Accounts.Scope
   alias Posbd.Businesses
   alias Posbd.Businesses.Roles
 
@@ -37,7 +38,9 @@ defmodule PosbdWeb.Api.BusinessController do
 
       {business, membership} ->
         if Roles.can?(membership, "settings.manage") do
-          with {:ok, updated} <- Businesses.update_business(business, params) do
+          scoped = Scope.put_business(scope, business, membership)
+
+          with {:ok, updated} <- Businesses.update_business(scoped, business, params) do
             render(conn, :show, business: updated, role: membership.role)
           end
         else
@@ -52,7 +55,9 @@ defmodule PosbdWeb.Api.BusinessController do
         {:error, :not_found}
 
       {business, membership} ->
-        with {:ok, updated} <- Businesses.complete_onboarding(business) do
+        scoped = Scope.put_business(scope, business, membership)
+
+        with {:ok, updated} <- Businesses.complete_onboarding(scoped, business) do
           render(conn, :show, business: updated, role: membership.role)
         end
     end

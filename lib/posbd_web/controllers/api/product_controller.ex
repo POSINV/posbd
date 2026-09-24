@@ -28,7 +28,7 @@ defmodule PosbdWeb.Api.ProductController do
   def update(%{assigns: %{current_scope: scope}} = conn, %{"id" => id, "product" => params}) do
     with :ok <- Authorize.require(scope, "products.update"),
          product when not is_nil(product) <- Products.get_product(scope, id),
-         {:ok, updated} <- Products.update_product(product, params) do
+         {:ok, updated} <- Products.update_product(scope, product, params) do
       render(conn, :show, product: updated)
     else
       nil -> {:error, :not_found}
@@ -39,7 +39,7 @@ defmodule PosbdWeb.Api.ProductController do
   def delete(%{assigns: %{current_scope: scope}} = conn, %{"id" => id}) do
     with :ok <- Authorize.require(scope, "products.delete"),
          product when not is_nil(product) <- Products.get_product(scope, id),
-         {:ok, _} <- Products.delete_product(product) do
+         {:ok, _} <- Products.delete_product(scope, product) do
       send_resp(conn, :no_content, "")
     else
       nil -> {:error, :not_found}

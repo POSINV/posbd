@@ -53,12 +53,12 @@ defmodule Posbd.BusinessesTest do
     end
   end
 
-  describe "update_business/2" do
-    test "updates invoice header/printing fields", %{scope: scope} do
-      business = business_fixture(scope)
+  describe "update_business/3" do
+    test "updates invoice header/printing fields" do
+      scope = full_scope_fixture()
 
       assert {:ok, updated} =
-               Businesses.update_business(business, %{
+               Businesses.update_business(scope, scope.business, %{
                  address: "12 MG Road, Bengaluru",
                  phone: "9876543210",
                  email: "shop@example.com",
@@ -72,11 +72,11 @@ defmodule Posbd.BusinessesTest do
       assert updated.invoice_footer == "Thank you for shopping with us!"
     end
 
-    test "updates printer settings and rejects an unsupported paper width", %{scope: scope} do
-      business = business_fixture(scope)
+    test "updates printer settings and rejects an unsupported paper width" do
+      scope = full_scope_fixture()
 
       assert {:ok, updated} =
-               Businesses.update_business(business, %{
+               Businesses.update_business(scope, scope.business, %{
                  printer_paper_width: "58mm",
                  printer_header_align: "left",
                  default_print_layout: "a4"
@@ -86,18 +86,29 @@ defmodule Posbd.BusinessesTest do
       assert updated.default_print_layout == "a4"
 
       assert {:error, changeset} =
-               Businesses.update_business(business, %{printer_paper_width: "poster-size"})
+               Businesses.update_business(scope, updated, %{printer_paper_width: "poster-size"})
 
       assert "is invalid" in errors_on(changeset).printer_paper_width
     end
+
+    test "logs a business.settings_updated audit entry when fields change" do
+      scope = full_scope_fixture()
+
+      assert {:ok, _updated} =
+               Businesses.update_business(scope, scope.business, %{address: "12 MG Road"})
+
+      assert [log] = Posbd.AuditLogs.list(scope).data
+      assert log.action == "business.settings_updated"
+      assert "address" in log.metadata["fields"]
+    end
   end
 
-  describe "complete_onboarding/1" do
-    test "stamps onboarding_completed_at", %{scope: scope} do
-      business = business_fixture(scope)
-      assert is_nil(business.onboarding_completed_at)
+  describe "complete_onboarding/2" do
+    test "stamps onboarding_completed_at" do
+      scope = full_scope_fixture()
+      assert is_nil(scope.business.onboarding_completed_at)
 
-      assert {:ok, updated} = Businesses.complete_onboarding(business)
+      assert {:ok, updated} = Businesses.complete_onboarding(scope, scope.business)
       assert updated.onboarding_completed_at
     end
   end

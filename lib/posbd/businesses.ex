@@ -9,6 +9,7 @@ defmodule Posbd.Businesses do
 
   import Ecto.Query, warn: false
 
+  alias Posbd.AuditLogs
   alias Posbd.Repo
   alias Posbd.Accounts.Scope
   alias Posbd.Businesses.{Business, Membership}
@@ -52,16 +53,35 @@ defmodule Posbd.Businesses do
     |> Repo.one()
   end
 
-  def update_business(%Business{} = business, attrs) do
-    business
-    |> Business.changeset(attrs)
-    |> Repo.update()
+  def update_business(%Scope{} = scope, %Business{} = business, attrs) do
+    changeset = Business.changeset(business, attrs)
+
+    case Repo.update(changeset) do
+      {:ok, updated} = ok ->
+        changed_fields = changeset.changes |> Map.keys() |> Enum.map(&to_string/1)
+
+        if changed_fields != [] do
+          AuditLogs.record(scope, "business.settings_updated", "Business", updated.id, %{
+            fields: changed_fields
+          })
+        end
+
+        ok
+
+      error ->
+        error
+    end
   end
 
-  def complete_onboarding(%Business{} = business) do
-    business
-    |> Business.complete_onboarding_changeset()
-    |> Repo.update()
+  def complete_onboarding(%Scope{} = scope, %Business{} = business) do
+    case business |> Business.complete_onboarding_changeset() |> Repo.update() do
+      {:ok, updated} = ok ->
+        AuditLogs.record(scope, "business.onboarding_completed", "Business", updated.id, %{})
+        ok
+
+      error ->
+        error
+    end
   end
 
   @doc "Loads the scope's membership for the given business, or nil."

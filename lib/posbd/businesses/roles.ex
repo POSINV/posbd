@@ -14,7 +14,7 @@ defmodule Posbd.Businesses.Roles do
     billing.create billing.cancel billing.discount
     customers.view customers.manage
     reports.view reports.export
-    users.manage settings.manage
+    users.manage settings.manage audit.view
   )
 
   @default_permissions %{

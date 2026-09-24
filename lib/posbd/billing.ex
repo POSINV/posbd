@@ -13,6 +13,7 @@ defmodule Posbd.Billing do
 
   import Ecto.Query, warn: false
 
+  alias Posbd.AuditLogs
   alias Posbd.Repo
   alias Posbd.Accounts.Scope
   alias Posbd.Businesses.{Business, Roles}
@@ -60,16 +61,142 @@ defmodule Posbd.Billing do
   defp do_create_invoice(scope, business, user, membership, attrs) do
     with {:ok, lines} <- build_lines(scope, attrs["items"]),
          :ok <- authorize_discounts(membership, lines) do
+      result =
+        Repo.transact(fn ->
+          with {:ok, invoice} <- insert_invoice(business, user, lines, attrs),
+               {:ok, _items} <- insert_items(invoice, lines),
+               {:ok, payments} <- insert_payments(invoice, user, attrs["payments"] || []),
+               {:ok, invoice} <- apply_payment_status(invoice, payments),
+               :ok <- reduce_inventory(scope, lines, invoice.invoice_number) do
+            {:ok, preload_invoice(invoice)}
+          end
+        end)
+
+      case result do
+        {:ok, invoice} = ok ->
+          discount_total =
+            lines |> Enum.map(& &1.discount_amount) |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+
+          AuditLogs.record(scope, "invoice.created", "Invoice", invoice.id, %{
+            invoice_number: invoice.invoice_number,
+            total_amount: Decimal.to_string(invoice.total_amount),
+            discount_amount: Decimal.to_string(discount_total)
+          })
+
+          ok
+
+        error ->
+          error
+      end
+    end
+  end
+
+  @doc """
+  Creates a historical invoice from already-migrated data (AGENTS.md §14,
+  §27) - used by `Posbd.Imports.commit_historical_bills/2`, never called
+  directly from the live billing screen.
+
+      %{
+        "invoice_number" => "OLD-1001",
+        "issued_at" => ~U[2025-01-15 00:00:00Z],
+        "customer_id" => nil | id,
+        "items" => [%{"product_id" => id, "quantity" => n, "unit_price" => "..", "discount_amount" => "..", "tax_amount" => "..", "tax_rate" => ".."}],
+        "payments" => [%{"method" => "cash", "amount" => "..", "reference" => nil}],
+        "notes" => nil
+      }
+
+  Unlike `create_invoice/2`: the caller supplies `invoice_number` and each
+  item's `unit_price`/`tax_amount` directly instead of them being computed
+  from live pricing (the old system's own numbers are the source of truth
+  for a sale that already happened), and inventory is never touched -
+  that stock is already accounted for in whatever opening stock figure
+  was imported separately, so deducting it again here would corrupt the
+  current count.
+  """
+  def import_historical_invoice(%Scope{business: business, user: user} = scope, attrs) do
+    # A date-only historical timestamp has no microsecond component, but
+    # `:utc_datetime_usec` requires exactly 6-digit precision - normalize
+    # here so every caller (not just the CSV importer) gets this for free.
+    attrs = Map.put(attrs, "issued_at", to_usec_datetime(attrs["issued_at"]))
+
+    with {:ok, lines} <- build_historical_lines(scope, attrs["items"]) do
       Repo.transact(fn ->
-        with {:ok, invoice} <- insert_invoice(business, user, lines, attrs),
+        with {:ok, invoice} <- insert_historical_invoice(business, user, lines, attrs),
              {:ok, _items} <- insert_items(invoice, lines),
-             {:ok, payments} <- insert_payments(invoice, user, attrs["payments"] || []),
-             {:ok, invoice} <- apply_payment_status(invoice, payments),
-             :ok <- reduce_inventory(scope, lines, invoice.invoice_number) do
+             {:ok, payments} <-
+               insert_payments(invoice, user, attrs["payments"] || [], attrs["issued_at"]),
+             {:ok, invoice} <- apply_payment_status(invoice, payments) do
           {:ok, preload_invoice(invoice)}
         end
       end)
     end
+  end
+
+  defp to_usec_datetime(%DateTime{microsecond: {microsecond, _precision}} = dt) do
+    %{dt | microsecond: {microsecond, 6}}
+  end
+
+  defp build_historical_lines(scope, items) do
+    items
+    |> Enum.reduce_while({:ok, []}, fn item, {:ok, acc} ->
+      case build_historical_line(scope, item) do
+        {:ok, line} -> {:cont, {:ok, [line | acc]}}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, lines} -> {:ok, Enum.reverse(lines)}
+      error -> error
+    end
+  end
+
+  defp build_historical_line(scope, item) do
+    with {:ok, target} <- fetch_target(scope, item),
+         {:ok, quantity} <- fetch_quantity(item) do
+      unit_price = to_decimal(item["unit_price"])
+      discount_amount = to_decimal(item["discount_amount"])
+      tax_amount = to_decimal(item["tax_amount"])
+      tax_rate = to_decimal(item["tax_rate"])
+      subtotal = Decimal.mult(unit_price, quantity)
+      line_total = subtotal |> Decimal.sub(discount_amount) |> Decimal.add(tax_amount)
+
+      {:ok,
+       %{
+         target: target,
+         quantity: quantity,
+         name_snapshot: name_snapshot(target),
+         unit_price: unit_price,
+         tax_rate: tax_rate,
+         discount_amount: discount_amount,
+         subtotal: subtotal,
+         tax_amount: tax_amount,
+         line_total: line_total
+       }}
+    end
+  end
+
+  defp insert_historical_invoice(business, user, lines, attrs) do
+    subtotal = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.subtotal, &2))
+    discount_amount = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.discount_amount, &2))
+    tax_amount = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.tax_amount, &2))
+    total_amount = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.line_total, &2))
+
+    %Invoice{}
+    |> Invoice.build_changeset(%{
+      business_id: business.id,
+      customer_id: attrs["customer_id"],
+      created_by_id: user.id,
+      invoice_number: attrs["invoice_number"],
+      source: "migrated",
+      currency: business.currency,
+      subtotal: subtotal,
+      discount_amount: discount_amount,
+      tax_amount: tax_amount,
+      total_amount: total_amount,
+      notes: attrs["notes"],
+      issued_at: attrs["issued_at"]
+    })
+    |> Repo.insert()
   end
 
   defp authorize_discounts(membership, lines) do
@@ -245,10 +372,11 @@ defmodule Posbd.Billing do
     end
   end
 
-  defp insert_payments(_invoice, _user, []), do: {:ok, []}
+  defp insert_payments(invoice, user, payments, received_at \\ nil)
+  defp insert_payments(_invoice, _user, [], _received_at), do: {:ok, []}
 
-  defp insert_payments(invoice, user, payments) do
-    now = DateTime.utc_now()
+  defp insert_payments(invoice, user, payments, received_at) do
+    now = received_at || DateTime.utc_now()
 
     Enum.reduce_while(payments, {:ok, []}, fn payment, {:ok, acc} ->
       fields = %{
@@ -404,14 +532,34 @@ defmodule Posbd.Billing do
     else
       invoice = preload_invoice(invoice)
 
-      Repo.transact(fn ->
-        with :ok <- restore_inventory(scope, invoice),
-             {:ok, invoice} <- invoice |> Invoice.status_changeset("cancelled") |> Repo.update() do
-          {:ok, preload_invoice(invoice)}
-        end
-      end)
+      result =
+        Repo.transact(fn ->
+          with :ok <- restore_inventory(scope, invoice),
+               {:ok, invoice} <- invoice |> Invoice.status_changeset("cancelled") |> Repo.update() do
+            {:ok, preload_invoice(invoice)}
+          end
+        end)
+
+      case result do
+        {:ok, cancelled} = ok ->
+          AuditLogs.record(scope, "invoice.cancelled", "Invoice", cancelled.id, %{
+            invoice_number: cancelled.invoice_number
+          })
+
+          ok
+
+        error ->
+          error
+      end
     end
   end
+
+  # A migrated (historical) invoice never touched live inventory when it
+  # was imported - the stock it represents is already reflected in
+  # whatever opening stock figure was imported separately - so cancelling
+  # one must never add stock back either, or the current count would be
+  # inflated.
+  defp restore_inventory(_scope, %Invoice{source: "migrated"}), do: :ok
 
   defp restore_inventory(scope, invoice) do
     Enum.reduce_while(invoice.items, :ok, fn item, :ok ->

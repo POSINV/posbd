@@ -238,6 +238,92 @@ defmodule Posbd.BillingTest do
       {:ok, cancelled} = Billing.cancel_invoice(scope, invoice)
       assert {:error, %{message: _}} = Billing.cancel_invoice(scope, cancelled)
     end
+
+    test "cancelling a migrated invoice never restores stock", %{scope: scope} do
+      product = product_fixture(scope, selling_price: "50.00")
+      {:ok, _} = seed_stock(scope, product, 10)
+
+      {:ok, invoice} =
+        Billing.import_historical_invoice(scope, %{
+          "invoice_number" => "OLD-1",
+          "issued_at" => ~U[2025-01-01 00:00:00Z],
+          "items" => [
+            %{"product_id" => product.id, "quantity" => 3, "unit_price" => "50.00"}
+          ]
+        })
+
+      assert Products.get_product(scope, product.id).stock_quantity == 10
+
+      assert {:ok, cancelled} = Billing.cancel_invoice(scope, invoice)
+      assert cancelled.status == "cancelled"
+      assert Products.get_product(scope, product.id).stock_quantity == 10
+    end
+  end
+
+  describe "import_historical_invoice/2" do
+    test "creates a completed, migrated invoice without touching inventory", %{scope: scope} do
+      product = product_fixture(scope, selling_price: "999.00")
+      {:ok, _} = seed_stock(scope, product, 5)
+
+      assert {:ok, invoice} =
+               Billing.import_historical_invoice(scope, %{
+                 "invoice_number" => "OLD-2001",
+                 "issued_at" => ~U[2024-06-10 00:00:00Z],
+                 "items" => [
+                   %{
+                     "product_id" => product.id,
+                     "quantity" => 2,
+                     "unit_price" => "40.00",
+                     "discount_amount" => "5.00",
+                     "tax_amount" => "3.50"
+                   }
+                 ]
+               })
+
+      assert invoice.source == "migrated"
+      assert invoice.invoice_number == "OLD-2001"
+      assert invoice.issued_at == ~U[2024-06-10 00:00:00.000000Z]
+      # 2 * 40.00 - 5.00 + 3.50, using the historical price, not the
+      # product's current selling_price of 999.00.
+      assert Decimal.equal?(invoice.total_amount, Decimal.new("78.50"))
+      assert invoice.payment_status == "unpaid"
+
+      # No sale movement was recorded and stock is untouched.
+      assert Products.get_product(scope, product.id).stock_quantity == 5
+    end
+
+    test "records a payment and marks the invoice paid when amount_paid covers the total", %{
+      scope: scope
+    } do
+      product = product_fixture(scope, selling_price: "100.00")
+
+      assert {:ok, invoice} =
+               Billing.import_historical_invoice(scope, %{
+                 "invoice_number" => "OLD-2002",
+                 "issued_at" => ~U[2024-06-11 00:00:00Z],
+                 "items" => [
+                   %{"product_id" => product.id, "quantity" => 1, "unit_price" => "80.00"}
+                 ],
+                 "payments" => [%{"method" => "cash", "amount" => "80.00"}]
+               })
+
+      assert invoice.payment_status == "paid"
+      assert Decimal.equal?(invoice.amount_paid, Decimal.new("80.00"))
+    end
+
+    test "rejects a duplicate invoice_number for the business", %{scope: scope} do
+      product = product_fixture(scope, selling_price: "10.00")
+
+      attrs = %{
+        "invoice_number" => "OLD-DUP",
+        "issued_at" => ~U[2024-01-01 00:00:00Z],
+        "items" => [%{"product_id" => product.id, "quantity" => 1, "unit_price" => "10.00"}]
+      }
+
+      assert {:ok, _} = Billing.import_historical_invoice(scope, attrs)
+      assert {:error, changeset} = Billing.import_historical_invoice(scope, attrs)
+      assert "has already been taken" in errors_on(changeset).invoice_number
+    end
   end
 
   defp seed_stock(scope, target, quantity) do

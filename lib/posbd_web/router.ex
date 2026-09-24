@@ -76,6 +76,19 @@ defmodule PosbdWeb.Router do
     post "/invoices/:id/payments", InvoiceController, :add_payment
     post "/invoices/:id/cancel", InvoiceController, :cancel
 
+    get "/imports/products/template", ImportController, :products_template
+    post "/imports/products/preview", ImportController, :preview_products
+    post "/imports/products/commit", ImportController, :commit_products
+    get "/imports/opening_stock/template", ImportController, :opening_stock_template
+    post "/imports/opening_stock/preview", ImportController, :preview_opening_stock
+    post "/imports/opening_stock/commit", ImportController, :commit_opening_stock
+    get "/imports/historical_bills/template", ImportController, :historical_bills_template
+    post "/imports/historical_bills/preview", ImportController, :preview_historical_bills
+    post "/imports/historical_bills/commit", ImportController, :commit_historical_bills
+    get "/imports/history", ImportController, :history
+
+    get "/audit_logs", AuditLogController, :index
+
     get "/reports/sales_summary", ReportController, :sales_summary
     get "/reports/daily_sales", ReportController, :daily_sales
     get "/reports/top_products", ReportController, :top_products
