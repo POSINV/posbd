@@ -11,6 +11,21 @@ config :posbd,
   ecto_repos: [Posbd.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Phase 2 SaaS subscription defaults (AGENTS.md / Phase 2 §4) - kept as
+# config, not hardcoded, so the trial length can change without touching
+# application logic.
+config :posbd, :subscriptions, trial_period_days: 30
+
+# Razorpay powers real subscription checkout (Phase 2 §10/§11). Real keys
+# are supplied per-environment (config/dev.exs reads env vars; prod comes
+# from config/runtime.exs); `req_options` lets tests swap in `Req.Test`
+# instead of hitting the network.
+config :posbd, :razorpay,
+  key_id: nil,
+  key_secret: nil,
+  webhook_secret: nil,
+  req_options: []
+
 # Business-local report date ranges (e.g. "today") need real IANA time
 # zone rules to convert to/from UTC correctly (see AGENTS.md §22).
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase

@@ -35,3 +35,12 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+# Fixed test-only keys (signature tests compute an expected HMAC against
+# `webhook_secret`, so it must be a known value) and `Req.Test` in place
+# of a real network call for order creation.
+config :posbd, :razorpay,
+  key_id: "rzp_test_fake_key",
+  key_secret: "fake_key_secret",
+  webhook_secret: "fake_webhook_secret",
+  req_options: [plug: {Req.Test, Posbd.Payments.Razorpay}]

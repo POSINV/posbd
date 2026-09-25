@@ -55,6 +55,11 @@ if config_env() == :prod do
 
   config :posbd, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  config :posbd, :razorpay,
+    key_id: System.get_env("RAZORPAY_KEY_ID"),
+    key_secret: System.get_env("RAZORPAY_KEY_SECRET"),
+    webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET")
+
   config :posbd, PosbdWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

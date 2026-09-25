@@ -11,6 +11,7 @@ defmodule Posbd.Businesses do
 
   alias Posbd.AuditLogs
   alias Posbd.Repo
+  alias Posbd.Subscriptions
   alias Posbd.Accounts.Scope
   alias Posbd.Businesses.{Business, Membership}
 
@@ -27,8 +28,9 @@ defmodule Posbd.Businesses do
   end
 
   @doc """
-  Creates a new business and makes the scope's user its owner, in a
-  single transaction so a partially-created tenant can never exist.
+  Creates a new business, makes the scope's user its owner, and starts its
+  free trial (Phase 2 §4), all in a single transaction so a partially-
+  created tenant can never exist.
   """
   def create_business(%Scope{user: user}, attrs) do
     Repo.transact(fn ->
@@ -36,11 +38,15 @@ defmodule Posbd.Businesses do
            {:ok, _membership} <-
              %Membership{}
              |> Membership.owner_changeset(business.id, user.id)
-             |> Repo.insert() do
+             |> Repo.insert(),
+           {:ok, _subscription} <- Subscriptions.start_trial(business) do
         {:ok, business}
       end
     end)
   end
+
+  @doc "Fetches a business by id with no user/membership scoping - platform-admin use only, never exposed to tenant-scoped routes."
+  def get_business(id), do: Repo.get(Business, id)
 
   @doc "Fetches a business for the scope's user, returning nil if not a member."
   def get_business_for_user(%Scope{user: user}, business_id) do

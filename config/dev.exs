@@ -93,3 +93,11 @@ config :phoenix_live_view, :colocated_js, disable_symlink_warning: true
 
 # Origins allowed to call the API (the Vue dev server).
 config :posbd, :cors_origins, ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+# Razorpay test-mode keys (https://dashboard.razorpay.com -> Settings ->
+# API Keys, in Test Mode). Subscription checkout simply won't work until
+# these are set - nothing else in the app depends on them.
+config :posbd, :razorpay,
+  key_id: System.get_env("RAZORPAY_KEY_ID"),
+  key_secret: System.get_env("RAZORPAY_KEY_SECRET"),
+  webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET")

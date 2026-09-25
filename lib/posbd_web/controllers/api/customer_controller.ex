@@ -7,7 +7,7 @@ defmodule PosbdWeb.Api.CustomerController do
   action_fallback PosbdWeb.Api.FallbackController
 
   def index(%{assigns: %{current_scope: scope}} = conn, params) do
-    render(conn, :index, customers: Customers.list_customers(scope, params))
+    render(conn, :index, rows: Customers.list_customers(scope, params))
   end
 
   def create(%{assigns: %{current_scope: scope}} = conn, %{"customer" => params}) do
@@ -24,10 +24,18 @@ defmodule PosbdWeb.Api.CustomerController do
     end
   end
 
+  @doc "Purchase history summary (Phase 2 §16/§33) - total spend, visits, last purchase, top products, outstanding balance, and segment."
+  def summary(%{assigns: %{current_scope: scope}} = conn, %{"id" => id}) do
+    case Customers.get_customer(scope, id) do
+      nil -> {:error, :not_found}
+      customer -> render(conn, :summary, summary: Customers.purchase_summary(scope, customer))
+    end
+  end
+
   def update(%{assigns: %{current_scope: scope}} = conn, %{"id" => id, "customer" => params}) do
     with :ok <- Authorize.require(scope, "customers.manage"),
          customer when not is_nil(customer) <- Customers.get_customer(scope, id),
-         {:ok, updated} <- Customers.update_customer(customer, params) do
+         {:ok, updated} <- Customers.update_customer(scope, customer, params) do
       render(conn, :show, customer: updated)
     else
       nil -> {:error, :not_found}
@@ -38,7 +46,7 @@ defmodule PosbdWeb.Api.CustomerController do
   def delete(%{assigns: %{current_scope: scope}} = conn, %{"id" => id}) do
     with :ok <- Authorize.require(scope, "customers.manage"),
          customer when not is_nil(customer) <- Customers.get_customer(scope, id),
-         {:ok, _} <- Customers.delete_customer(customer) do
+         {:ok, _} <- Customers.delete_customer(scope, customer) do
       send_resp(conn, :no_content, "")
     else
       nil -> {:error, :not_found}

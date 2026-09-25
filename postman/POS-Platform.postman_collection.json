@@ -21,7 +21,11 @@
     { "key": "customer_id", "value": "" },
     { "key": "invoice_id", "value": "" },
     { "key": "user_email", "value": "owner@example.com" },
-    { "key": "user_password", "value": "supersecret1" }
+    { "key": "user_password", "value": "supersecret1" },
+    { "key": "plan_id", "value": "" },
+    { "key": "admin_token", "value": "" },
+    { "key": "admin_email", "value": "admin@demo.pos" },
+    { "key": "admin_password", "value": "DemoPass123!" }
   ],
   "item": [
     {
@@ -635,7 +639,7 @@
     },
     {
       "name": "Customers",
-      "description": "Tenant-scoped.",
+      "description": "Tenant-scoped. List/Show responses now include each customer's purchase stats (total_spent, visit_count, last_purchase_at, outstanding_balance) and computed segment (vip/high_value/regular/new/inactive - Phase 2 §15/§16/§22/§33), derived fresh from their invoices rather than stored.",
       "item": [
         {
           "name": "List / Search Customers",
@@ -643,12 +647,28 @@
             "method": "GET",
             "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
             "url": {
-              "raw": "{{base_url}}/customers?search=",
+              "raw": "{{base_url}}/customers?search=&segment=",
               "host": ["{{base_url}}"],
               "path": ["customers"],
-              "query": [{ "key": "search", "value": "" }]
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "segment", "value": "", "disabled": true }
+              ]
             }
           }
+        },
+        {
+          "name": "Get Customer Purchase Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}/summary",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}", "summary"]
+            }
+          },
+          "description": "Total spend, visits, last purchase, average bill, outstanding balance, top products, and segment for one customer."
         },
         {
           "name": "Create Customer",
@@ -660,7 +680,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer\": {\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"9998887777\",\n    \"email\": \"priya@example.com\"\n  }\n}"
+              "raw": "{\n  \"customer\": {\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"9998887777\",\n    \"email\": \"priya@example.com\",\n    \"customer_type\": \"individual\",\n    \"preferred_language\": \"hi\",\n    \"date_of_birth\": \"1990-05-12\",\n    \"accepts_transactional_messages\": true,\n    \"accepts_promotional_messages\": false\n  }\n}"
             },
             "url": { "raw": "{{base_url}}/customers", "host": ["{{base_url}}"], "path": ["customers"] }
           },
@@ -1086,6 +1106,253 @@
                 { "key": "from", "value": "", "disabled": true },
                 { "key": "to", "value": "", "disabled": true }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription (Phase 2)",
+      "description": "The business's own view of its SaaS subscription - completely separate from retail billing/payments. 'List Public Plans' needs no auth (used on the marketing/signup pages before an account exists); the rest are tenant-scoped and are never blocked by the subscription gate, so a business whose trial/subscription has lapsed can still see why and fix it.",
+      "item": [
+        {
+          "name": "List Public Plans",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{base_url}}/subscription_plans",
+              "host": ["{{base_url}}"],
+              "path": ["subscription_plans"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["subscription"]
+            }
+          }
+        },
+        {
+          "name": "List Subscription Payments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "url": {
+              "raw": "{{base_url}}/subscription/payments",
+              "host": ["{{base_url}}"],
+              "path": ["subscription", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Create Checkout Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"plan_id\": \"{{plan_id}}\"\n}" },
+            "url": {
+              "raw": "{{base_url}}/subscription/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["subscription", "checkout"]
+            }
+          },
+          "description": "Requires 'settings.manage'. Creates a Razorpay Order and returns {order_id, key_id, amount, currency} for the frontend to open Razorpay Checkout with."
+        },
+        {
+          "name": "Verify Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-business-id", "value": "{{business_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_xxx\",\n  \"razorpay_payment_id\": \"pay_xxx\",\n  \"razorpay_signature\": \"signature_from_checkout_handler\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscription/checkout/verify",
+              "host": ["{{base_url}}"],
+              "path": ["subscription", "checkout", "verify"]
+            }
+          },
+          "description": "Verifies the HMAC-SHA256 signature Razorpay Checkout's success handler returns, then activates the subscription. Only callable with real values from an actual Razorpay Checkout session - not directly testable from Postman."
+        },
+        {
+          "name": "Razorpay Webhook (reference only)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Razorpay-Signature", "value": "computed_hmac_sha256_of_the_raw_body" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": { \"id\": \"pay_xxx\", \"order_id\": \"order_xxx\" }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/razorpay",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "razorpay"]
+            }
+          },
+          "description": "Called directly by Razorpay, not by a client. No user auth - authenticated instead by the X-Razorpay-Signature header, an HMAC-SHA256 of the exact raw request body using the webhook secret configured in the Razorpay dashboard. Idempotent (Phase 2 §11): the same event id is only ever processed once. Not usefully callable from Postman since the signature must match this exact body byte-for-byte."
+        }
+      ]
+    },
+    {
+      "name": "Platform Admin (Phase 2)",
+      "description": "Internal platform-operator API - a completely separate auth domain from tenant users (its own bearer token, never the business 'auth_token'). No self-registration; admin accounts are created out-of-band (seeds/console). 'admin' role can activate plans/cancel subscriptions/manage plans; 'support' role is read-only.",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/admin/login", "host": ["{{base_url}}"], "path": ["admin", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('admin_token', pm.response.json().data.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Me",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "url": { "raw": "{{base_url}}/admin/me", "host": ["{{base_url}}"], "path": ["admin", "me"] }
+          }
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "url": { "raw": "{{base_url}}/admin/logout", "host": ["{{base_url}}"], "path": ["admin", "logout"] }
+          }
+        },
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "url": { "raw": "{{base_url}}/admin/dashboard", "host": ["{{base_url}}"], "path": ["admin", "dashboard"] }
+          }
+        },
+        {
+          "name": "List Businesses (with status)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "url": {
+              "raw": "{{base_url}}/admin/businesses?status=trialing",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "businesses"],
+              "query": [{ "key": "status", "value": "trialing", "disabled": true }]
+            }
+          }
+        },
+        {
+          "name": "List Plans (incl. inactive)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "url": { "raw": "{{base_url}}/admin/plans", "host": ["{{base_url}}"], "path": ["admin", "plans"] }
+          }
+        },
+        {
+          "name": "Create Plan",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": {\n    \"name\": \"Starter\",\n    \"slug\": \"starter\",\n    \"price\": \"999.00\",\n    \"currency\": \"INR\",\n    \"billing_period\": \"yearly\",\n    \"features\": { \"max_users\": 1 }\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/admin/plans", "host": ["{{base_url}}"], "path": ["admin", "plans"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('plan_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Plan",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": {\n    \"price\": \"1099.00\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/plans/{{plan_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "plans", "{{plan_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Activate Plan For Business",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"{{plan_id}}\",\n  \"payment_provider\": \"manual\",\n  \"provider_reference\": \"MANUAL-0001\",\n  \"notes\": \"Activated by support over phone\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/businesses/{{business_id}}/activate_plan",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "businesses", "{{business_id}}", "activate_plan"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Business Subscription",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "url": {
+              "raw": "{{base_url}}/admin/businesses/{{business_id}}/cancel_subscription",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "businesses", "{{business_id}}", "cancel_subscription"]
             }
           }
         }

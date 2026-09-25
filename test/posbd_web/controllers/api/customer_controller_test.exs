@@ -47,4 +47,31 @@ defmodule PosbdWeb.Api.CustomerControllerTest do
     conn = get(conn, ~p"/api/v1/customers?search=Findable")
     assert %{"data" => [%{"name" => "Findable Customer"}]} = json_response(conn, 200)
   end
+
+  test "GET /customers includes purchase stats and segment for each row", %{scope: scope} do
+    customer_fixture(scope, name: "No Purchases Yet")
+
+    conn = get(authed_conn(scope), ~p"/api/v1/customers")
+
+    assert %{"data" => [%{"total_spent" => "0", "visit_count" => 0, "segment" => "new"}]} =
+             json_response(conn, 200)
+  end
+
+  test "GET /customers/:id/summary returns purchase history for one customer", %{
+    conn: conn,
+    scope: scope
+  } do
+    customer = customer_fixture(scope, name: "Summary Customer")
+
+    conn = get(conn, ~p"/api/v1/customers/#{customer.id}/summary")
+
+    assert %{
+             "data" => %{
+               "visit_count" => 0,
+               "total_spent" => "0",
+               "top_products" => [],
+               "segment" => "new"
+             }
+           } = json_response(conn, 200)
+  end
 end

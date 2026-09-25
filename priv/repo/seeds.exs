@@ -12,10 +12,96 @@
 
 defmodule Posbd.Seeds do
   alias Posbd.{Accounts, Businesses, Categories, Products, Inventory, Billing}
+  alias Posbd.{PlatformAdmins, Subscriptions}
   alias Posbd.Accounts.Scope
 
   def run(businesses) do
+    seed_plans()
+    seed_platform_admin()
     Enum.each(businesses, &seed_business/1)
+  end
+
+  # Phase 2 subscription plans (§6/§7) - illustrative pricing/features,
+  # safe to re-run since each is skipped once its slug already exists.
+  @plans [
+    %{
+      name: "Starter",
+      slug: "starter",
+      price: "999.00",
+      currency: "INR",
+      billing_period: "yearly",
+      position: 1,
+      description: "Single user, core billing and inventory.",
+      features: %{"max_users" => 1}
+    },
+    %{
+      name: "Growth",
+      slug: "growth",
+      price: "2499.00",
+      currency: "INR",
+      billing_period: "yearly",
+      position: 2,
+      description: "Multiple staff logins, loyalty, and customer messaging.",
+      features: %{
+        "max_users" => 5,
+        "multi_user" => true,
+        "loyalty" => true,
+        "customer_management" => true,
+        "whatsapp" => true
+      }
+    },
+    %{
+      name: "Professional",
+      slug: "professional",
+      price: "4999.00",
+      currency: "INR",
+      billing_period: "yearly",
+      position: 3,
+      description: "Everything in Growth, plus campaigns and advanced reports.",
+      features: %{
+        "max_users" => 20,
+        "multi_user" => true,
+        "loyalty" => true,
+        "customer_management" => true,
+        "whatsapp" => true,
+        "offers" => true,
+        "advanced_reports" => true,
+        "migration" => true
+      }
+    }
+  ]
+
+  defp seed_plans do
+    Enum.each(@plans, fn attrs ->
+      case Subscriptions.list_plans(true) |> Enum.find(&(&1.slug == attrs.slug)) do
+        nil ->
+          {:ok, _} = Subscriptions.create_plan(attrs)
+          IO.puts("seed  plan #{attrs.name}")
+
+        _ ->
+          :ok
+      end
+    end)
+  end
+
+  defp seed_platform_admin do
+    email = "admin@demo.pos"
+
+    case PlatformAdmins.get_by_email(email) do
+      nil ->
+        {:ok, _} =
+          PlatformAdmins.create_admin(%{
+            email: email,
+            password: "DemoPass123!",
+            full_name: "Platform Admin",
+            role: "admin"
+          })
+
+        IO.puts("seed  platform admin - login: #{email} / DemoPass123!")
+
+      _ ->
+        :ok
+    end
   end
 
   defp seed_business(spec) do

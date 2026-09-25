@@ -22,6 +22,14 @@ defmodule PosbdWeb.Router do
     plug PosbdWeb.Plugs.RequireBusiness
   end
 
+  pipeline :subscription_gate do
+    plug PosbdWeb.Plugs.SubscriptionGate
+  end
+
+  pipeline :api_platform_admin do
+    plug PosbdWeb.Plugs.PlatformAdminAuth
+  end
+
   scope "/", PosbdWeb do
     pipe_through :browser
 
@@ -35,6 +43,14 @@ defmodule PosbdWeb.Router do
     post "/auth/register", AuthController, :register
     post "/auth/login", AuthController, :login
     get "/business_types", BusinessController, :templates
+    get "/subscription_plans", SubscriptionController, :public_plans
+
+    post "/admin/login", Admin.SessionController, :login
+
+    # Razorpay calls this directly with no user session - authenticated
+    # by its own signature header instead (Phase 2 §11), verified inside
+    # the controller.
+    post "/webhooks/razorpay", RazorpayWebhookController, :create
   end
 
   # Authenticated API routes, not yet scoped to a specific business
@@ -56,43 +72,75 @@ defmodule PosbdWeb.Router do
   scope "/api/v1", PosbdWeb.Api do
     pipe_through [:api, :api_auth, :api_business]
 
-    resources "/categories", CategoryController, except: [:new, :edit]
+    # Deliberately outside the :subscription_gate below - a business whose
+    # trial/subscription has lapsed must still be able to see its status
+    # and payment history in order to fix it (Phase 2 §9).
+    get "/subscription", SubscriptionController, :show
+    get "/subscription/payments", SubscriptionController, :payments
+    post "/subscription/checkout", SubscriptionController, :create_checkout
+    post "/subscription/checkout/verify", SubscriptionController, :verify_checkout
 
-    resources "/products", ProductController, except: [:new, :edit] do
-      resources "/variants", ProductVariantController, only: [:create, :update, :delete]
+    scope "/" do
+      pipe_through :subscription_gate
+
+      resources "/categories", CategoryController, except: [:new, :edit]
+
+      resources "/products", ProductController, except: [:new, :edit] do
+        resources "/variants", ProductVariantController, only: [:create, :update, :delete]
+      end
+
+      get "/attributes", AttributeController, :index
+
+      get "/price_tiers/quote", PriceTierController, :quote
+      resources "/price_tiers", PriceTierController, only: [:index, :create, :update, :delete]
+
+      get "/inventory/movements", InventoryController, :index
+      post "/inventory/movements", InventoryController, :create
+
+      resources "/customers", CustomerController, except: [:new, :edit]
+      get "/customers/:id/summary", CustomerController, :summary
+
+      resources "/invoices", InvoiceController, only: [:index, :create, :show]
+      post "/invoices/:id/payments", InvoiceController, :add_payment
+      post "/invoices/:id/cancel", InvoiceController, :cancel
+
+      get "/imports/products/template", ImportController, :products_template
+      post "/imports/products/preview", ImportController, :preview_products
+      post "/imports/products/commit", ImportController, :commit_products
+      get "/imports/opening_stock/template", ImportController, :opening_stock_template
+      post "/imports/opening_stock/preview", ImportController, :preview_opening_stock
+      post "/imports/opening_stock/commit", ImportController, :commit_opening_stock
+      get "/imports/historical_bills/template", ImportController, :historical_bills_template
+      post "/imports/historical_bills/preview", ImportController, :preview_historical_bills
+      post "/imports/historical_bills/commit", ImportController, :commit_historical_bills
+      get "/imports/history", ImportController, :history
+
+      get "/audit_logs", AuditLogController, :index
+
+      get "/reports/sales_summary", ReportController, :sales_summary
+      get "/reports/daily_sales", ReportController, :daily_sales
+      get "/reports/top_products", ReportController, :top_products
+      get "/reports/stock", ReportController, :stock
     end
+  end
 
-    get "/attributes", AttributeController, :index
+  # Platform-admin API routes (Phase 2 §13/§45) - entirely separate auth
+  # domain from tenant users; never reachable with a business bearer token.
+  scope "/api/v1/admin", PosbdWeb.Api.Admin do
+    pipe_through [:api, :api_platform_admin]
 
-    get "/price_tiers/quote", PriceTierController, :quote
-    resources "/price_tiers", PriceTierController, only: [:index, :create, :update, :delete]
+    get "/me", SessionController, :me
+    delete "/logout", SessionController, :logout
 
-    get "/inventory/movements", InventoryController, :index
-    post "/inventory/movements", InventoryController, :create
+    get "/dashboard", DashboardController, :show
+    get "/businesses", DashboardController, :businesses
 
-    resources "/customers", CustomerController, except: [:new, :edit]
+    post "/businesses/:business_id/activate_plan", SubscriptionController, :activate_plan
+    post "/businesses/:business_id/cancel_subscription", SubscriptionController, :cancel
 
-    resources "/invoices", InvoiceController, only: [:index, :create, :show]
-    post "/invoices/:id/payments", InvoiceController, :add_payment
-    post "/invoices/:id/cancel", InvoiceController, :cancel
-
-    get "/imports/products/template", ImportController, :products_template
-    post "/imports/products/preview", ImportController, :preview_products
-    post "/imports/products/commit", ImportController, :commit_products
-    get "/imports/opening_stock/template", ImportController, :opening_stock_template
-    post "/imports/opening_stock/preview", ImportController, :preview_opening_stock
-    post "/imports/opening_stock/commit", ImportController, :commit_opening_stock
-    get "/imports/historical_bills/template", ImportController, :historical_bills_template
-    post "/imports/historical_bills/preview", ImportController, :preview_historical_bills
-    post "/imports/historical_bills/commit", ImportController, :commit_historical_bills
-    get "/imports/history", ImportController, :history
-
-    get "/audit_logs", AuditLogController, :index
-
-    get "/reports/sales_summary", ReportController, :sales_summary
-    get "/reports/daily_sales", ReportController, :daily_sales
-    get "/reports/top_products", ReportController, :top_products
-    get "/reports/stock", ReportController, :stock
+    get "/plans", PlanController, :index
+    post "/plans", PlanController, :create
+    patch "/plans/:id", PlanController, :update
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

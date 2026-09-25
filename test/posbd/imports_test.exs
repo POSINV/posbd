@@ -231,7 +231,7 @@ defmodule Posbd.ImportsTest do
       assert Decimal.equal?(old2.amount_paid, Decimal.new("30.00"))
       assert is_nil(old2.customer_id)
 
-      assert [customer] = Customers.list_customers(scope)
+      assert [%{customer: customer}] = Customers.list_customers(scope)
       assert customer.name == "Ramesh Kumar"
 
       [log] = Imports.list_import_logs(scope)
