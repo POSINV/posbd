@@ -26,6 +26,27 @@ config :posbd, :razorpay,
   webhook_secret: nil,
   req_options: []
 
+# WhatsApp Business Platform (Meta Cloud API - Phase 2 §23-§29). Real
+# credentials come from config/dev.exs (env vars) or config/runtime.exs
+# (prod); `req_options` lets tests swap in `Req.Test`.
+config :posbd, :whatsapp,
+  access_token: nil,
+  phone_number_id: nil,
+  app_secret: nil,
+  webhook_verify_token: nil,
+  api_version: "v21.0",
+  req_options: []
+
+# Background jobs (Phase 2 §35) - WhatsApp sends and campaign fan-out run
+# here so they never block the HTTP request (a bill notification must
+# never slow down or fail a sale) or a campaign send loop. The `:whatsapp`
+# queue is separate from `:default` so a large campaign can never starve
+# transactional sends (bill/payment/loyalty notifications) behind it.
+config :posbd, Oban,
+  repo: Posbd.Repo,
+  queues: [default: 10, whatsapp: 5],
+  plugins: [{Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7}]
+
 # Business-local report date ranges (e.g. "today") need real IANA time
 # zone rules to convert to/from UTC correctly (see AGENTS.md §22).
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase

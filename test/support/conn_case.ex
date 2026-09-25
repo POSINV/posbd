@@ -23,6 +23,7 @@ defmodule PosbdWeb.ConnCase do
       @endpoint PosbdWeb.Endpoint
 
       use PosbdWeb, :verified_routes
+      use Oban.Testing, repo: Posbd.Repo
 
       # Import conveniences for testing with connections
       import Plug.Conn

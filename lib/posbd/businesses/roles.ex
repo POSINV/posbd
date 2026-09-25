@@ -15,14 +15,15 @@ defmodule Posbd.Businesses.Roles do
     customers.view customers.manage
     reports.view reports.export
     users.manage settings.manage audit.view
+    whatsapp.manage
   )
 
   @default_permissions %{
     "owner" => @all_permissions,
     "admin" => @all_permissions,
-    "manager" =>
-      ~w(products.view products.create products.update inventory.view inventory.adjust
-         billing.create billing.discount customers.view customers.manage reports.view reports.export),
+    "manager" => ~w(products.view products.create products.update inventory.view inventory.adjust
+         billing.create billing.discount customers.view customers.manage reports.view
+         reports.export whatsapp.manage),
     "cashier" => ~w(products.view billing.create customers.view),
     "inventory_staff" => ~w(products.view products.update inventory.view inventory.adjust),
     "accountant" => ~w(reports.view reports.export billing.view customers.view)

@@ -26,7 +26,7 @@ defmodule Posbd.Loyalty.LoyaltyLedgerEntry do
     belongs_to :invoice, Posbd.Billing.Invoice
     belongs_to :created_by, Posbd.Accounts.User
 
-    timestamps(type: :utc_datetime, updated_at: false)
+    timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
   def entry_types, do: @entry_types

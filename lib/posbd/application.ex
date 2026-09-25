@@ -12,6 +12,7 @@ defmodule Posbd.Application do
       Posbd.Repo,
       {DNSCluster, query: Application.get_env(:posbd, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Posbd.PubSub},
+      {Oban, Application.fetch_env!(:posbd, Oban)},
       # Start a worker by calling: Posbd.Worker.start_link(arg)
       # {Posbd.Worker, arg},
       # Start to serve requests, typically the last entry

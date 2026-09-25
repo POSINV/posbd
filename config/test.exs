@@ -44,3 +44,15 @@ config :posbd, :razorpay,
   key_secret: "fake_key_secret",
   webhook_secret: "fake_webhook_secret",
   req_options: [plug: {Req.Test, Posbd.Payments.Razorpay}]
+
+config :posbd, :whatsapp,
+  access_token: "fake_access_token",
+  phone_number_id: "123456",
+  app_secret: "fake_app_secret",
+  webhook_verify_token: "fake_verify_token",
+  req_options: [plug: {Req.Test, Posbd.Whatsapp.Provider}]
+
+# Jobs are enqueued as real rows but never auto-executed by a running
+# queue during tests - each test asserts on the enqueued job (or runs it
+# explicitly via `Oban.Testing`) instead of racing a background process.
+config :posbd, Oban, testing: :manual

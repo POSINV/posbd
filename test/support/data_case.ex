@@ -18,6 +18,8 @@ defmodule Posbd.DataCase do
 
   using do
     quote do
+      use Oban.Testing, repo: Posbd.Repo
+
       alias Posbd.Repo
 
       import Ecto

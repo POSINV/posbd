@@ -60,6 +60,12 @@ if config_env() == :prod do
     key_secret: System.get_env("RAZORPAY_KEY_SECRET"),
     webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET")
 
+  config :posbd, :whatsapp,
+    access_token: System.get_env("WHATSAPP_ACCESS_TOKEN"),
+    phone_number_id: System.get_env("WHATSAPP_PHONE_NUMBER_ID"),
+    app_secret: System.get_env("WHATSAPP_APP_SECRET"),
+    webhook_verify_token: System.get_env("WHATSAPP_WEBHOOK_VERIFY_TOKEN")
+
   config :posbd, PosbdWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

@@ -51,6 +51,12 @@ defmodule PosbdWeb.Router do
     # by its own signature header instead (Phase 2 §11), verified inside
     # the controller.
     post "/webhooks/razorpay", RazorpayWebhookController, :create
+
+    # Meta's WhatsApp webhook: a one-time GET handshake to subscribe, then
+    # POST status callbacks - both unauthenticated at the router level,
+    # verified inside the controller (Phase 2 §27).
+    get "/webhooks/whatsapp", WhatsappWebhookController, :verify
+    post "/webhooks/whatsapp", WhatsappWebhookController, :create
   end
 
   # Authenticated API routes, not yet scoped to a specific business
@@ -126,6 +132,13 @@ defmodule PosbdWeb.Router do
       get "/reports/top_products", ReportController, :top_products
       get "/reports/stock", ReportController, :stock
       get "/reports/loyalty", ReportController, :loyalty
+
+      resources "/whatsapp/templates", WhatsappTemplateController,
+        only: [:index, :create, :show, :update]
+
+      resources "/whatsapp/campaigns", WhatsappCampaignController, only: [:index, :create, :show]
+      post "/whatsapp/campaigns/:id/cancel", WhatsappCampaignController, :cancel
+      get "/whatsapp/messages", WhatsappMessageController, :index
     end
   end
 
@@ -146,6 +159,10 @@ defmodule PosbdWeb.Router do
     get "/plans", PlanController, :index
     post "/plans", PlanController, :create
     patch "/plans/:id", PlanController, :update
+
+    get "/whatsapp/templates", WhatsappTemplateController, :index
+    post "/whatsapp/templates/:id/approve", WhatsappTemplateController, :approve
+    post "/whatsapp/templates/:id/reject", WhatsappTemplateController, :reject
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

@@ -23,6 +23,7 @@ defmodule Posbd.Billing do
   alias Posbd.Loyalty
   alias Posbd.Pricing
   alias Posbd.Products.{Product, ProductVariant}
+  alias Posbd.Whatsapp
 
   @doc """
   Creates a completed invoice from `attrs`:
@@ -87,6 +88,9 @@ defmodule Posbd.Billing do
             total_amount: Decimal.to_string(invoice.total_amount),
             discount_amount: Decimal.to_string(discount_total)
           })
+
+          Whatsapp.notify_invoice_created(business, invoice)
+          Whatsapp.notify_loyalty_earned(business, invoice)
 
           ok
 
@@ -609,35 +613,45 @@ defmodule Posbd.Billing do
   end
 
   @doc "Records an additional payment against an existing invoice (settling a partial/credit sale)."
-  def add_payment(%Scope{user: user}, %Invoice{} = invoice, attrs) do
+  def add_payment(%Scope{business: business, user: user}, %Invoice{} = invoice, attrs) do
     if invoice.status == "cancelled" do
       {:error, %{message: "Cannot record a payment against a cancelled invoice"}}
     else
-      Repo.transact(fn ->
-        with {:ok, payment} <-
-               %Payment{}
-               |> Payment.build_changeset(%{
-                 invoice_id: invoice.id,
-                 recorded_by_id: user.id,
-                 method: attrs["method"],
-                 amount: to_decimal(attrs["amount"]),
-                 reference: attrs["reference"],
-                 received_at: DateTime.utc_now()
-               })
-               |> Repo.insert(),
-             new_total <- Decimal.add(invoice.amount_paid, payment.amount),
-             payment_status <-
-               if(Decimal.compare(new_total, invoice.total_amount) != :lt,
-                 do: "paid",
-                 else: "partial"
-               ),
-             {:ok, invoice} <-
-               invoice
-               |> Invoice.payment_recorded_changeset(new_total, payment_status)
-               |> Repo.update() do
-          {:ok, preload_invoice(invoice)}
-        end
-      end)
+      result =
+        Repo.transact(fn ->
+          with {:ok, payment} <-
+                 %Payment{}
+                 |> Payment.build_changeset(%{
+                   invoice_id: invoice.id,
+                   recorded_by_id: user.id,
+                   method: attrs["method"],
+                   amount: to_decimal(attrs["amount"]),
+                   reference: attrs["reference"],
+                   received_at: DateTime.utc_now()
+                 })
+                 |> Repo.insert(),
+               new_total <- Decimal.add(invoice.amount_paid, payment.amount),
+               payment_status <-
+                 if(Decimal.compare(new_total, invoice.total_amount) != :lt,
+                   do: "paid",
+                   else: "partial"
+                 ),
+               {:ok, invoice} <-
+                 invoice
+                 |> Invoice.payment_recorded_changeset(new_total, payment_status)
+                 |> Repo.update() do
+            {:ok, {preload_invoice(invoice), payment}}
+          end
+        end)
+
+      case result do
+        {:ok, {invoice, payment}} ->
+          Whatsapp.notify_payment_recorded(business, invoice, payment)
+          {:ok, invoice}
+
+        error ->
+          error
+      end
     end
   end
 

@@ -79,6 +79,14 @@
     {
       "key": "admin_password",
       "value": "DemoPass123!"
+    },
+    {
+      "key": "whatsapp_template_id",
+      "value": ""
+    },
+    {
+      "key": "whatsapp_campaign_id",
+      "value": ""
     }
   ],
   "item": [
@@ -1401,6 +1409,373 @@
       ]
     },
     {
+      "name": "WhatsApp (Phase 2)",
+      "description": "Official WhatsApp Business Platform integration (Phase 2 §23-§29) - never unofficial browser automation. Templates go through a platform-admin approval workflow (see Platform Admin > WhatsApp Template Review) before they can actually be used to send. Bill/payment/loyalty-earned messages send automatically after the matching event (see Billing's requests) if an approved template exists for that purpose and the customer has consented; campaigns are the mechanism for offer/promotional sends to a customer segment. All sends run through a background job (Oban) - never inline in the request.",
+      "item": [
+        {
+          "name": "Create Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": {\n    \"name\": \"Bill Ready\",\n    \"purpose\": \"billing\",\n    \"category\": \"utility\",\n    \"language\": \"en\",\n    \"body\": \"Hi {{1}}, your bill {{2}} for {{3}} is ready. Thank you for shopping with us!\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/whatsapp/templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "templates"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('whatsapp_template_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "description": "Always starts as `pending_approval`, regardless of any status field sent - only a platform admin can move it to `approved` (or `rejected`). `purpose` (billing/payment/loyalty/offer/custom) is how the platform finds \"the template to use\" for each automatic event; `{{1}}`, `{{2}}`, ... are variable placeholders."
+        },
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/whatsapp/templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "templates"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/whatsapp/templates/{{whatsapp_template_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "templates",
+                "{{whatsapp_template_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Template",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": {\n    \"body\": \"Hi {{1}}, your updated bill {{2}} for {{3}} is ready!\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/whatsapp/templates/{{whatsapp_template_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "templates",
+                "{{whatsapp_template_id}}"
+              ]
+            }
+          },
+          "description": "Editing a template's content resubmits it for approval, even if it was already approved."
+        },
+        {
+          "name": "Create Campaign (send now)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campaign\": {\n    \"name\": \"Diwali Flash Sale\",\n    \"template_id\": \"{{whatsapp_template_id}}\",\n    \"audience_segment\": \"all\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/whatsapp/campaigns",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "campaigns"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('whatsapp_campaign_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "description": "Requires an *approved* template belonging to this business. `audience_segment` is one of the customer segments Phase 2B already computes (all/vip/high_value/regular/new/inactive). With no `scheduled_at`, dispatch to the audience is enqueued immediately; the fan-out itself always runs in a background job, never inline in this request."
+        },
+        {
+          "name": "Create Campaign (scheduled)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campaign\": {\n    \"name\": \"Weekend Offer\",\n    \"template_id\": \"{{whatsapp_template_id}}\",\n    \"audience_segment\": \"vip\",\n    \"scheduled_at\": \"2026-12-25T09:00:00Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/whatsapp/campaigns",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "campaigns"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Campaigns",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/whatsapp/campaigns",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "campaigns"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show Campaign",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/whatsapp/campaigns/{{whatsapp_campaign_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "campaigns",
+                "{{whatsapp_campaign_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/whatsapp/campaigns/{{whatsapp_campaign_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "campaigns",
+                "{{whatsapp_campaign_id}}",
+                "cancel"
+              ]
+            }
+          },
+          "description": "Only works while the campaign is still `draft` or `scheduled`."
+        },
+        {
+          "name": "Message History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/whatsapp/messages?customer_id=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "whatsapp",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "customer_id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "description": "Every send attempt, newest first, with its current status (queued/sent/delivered/read/failed) - kept up to date by the WhatsApp webhook as Meta reports delivery."
+        },
+        {
+          "name": "Meta Webhook - Verification Handshake (reference only)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=the_configured_webhook_verify_token&hub.challenge=1234567890",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "hub.mode",
+                  "value": "subscribe"
+                },
+                {
+                  "key": "hub.verify_token",
+                  "value": "the_configured_webhook_verify_token"
+                },
+                {
+                  "key": "hub.challenge",
+                  "value": "1234567890"
+                }
+              ]
+            }
+          },
+          "description": "Meta calls this once when the webhook is subscribed in the developer console; the response body must echo back `hub.challenge` exactly."
+        },
+        {
+          "name": "Meta Webhook - Status Callback (reference only)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Hub-Signature-256",
+                "value": "sha256=computed_hmac_sha256_of_the_raw_body"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entry\": [\n    {\n      \"changes\": [\n        {\n          \"value\": {\n            \"statuses\": [\n              {\n                \"id\": \"wamid.HBg...\",\n                \"status\": \"delivered\"\n              }\n            ]\n          }\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/whatsapp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "whatsapp"
+              ]
+            }
+          },
+          "description": "Called directly by Meta, not by a client. Authenticated by the X-Hub-Signature-256 header (HMAC-SHA256 of the exact raw body using the app secret), verified inside the controller. Not usefully callable from Postman since the signature must match this exact body byte-for-byte."
+        }
+      ]
+    },
+    {
       "name": "Billing",
       "description": "Tenant-scoped. POST /invoices computes all pricing/tax/discount server-side from product_id/variant_id + quantity - never send a price. Passing the same idempotency_key twice returns the original invoice instead of creating a duplicate.",
       "item": [
@@ -2636,6 +3011,103 @@
                 "businesses",
                 "{{business_id}}",
                 "cancel_subscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List WhatsApp Templates Pending Review",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/whatsapp/templates?status=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "whatsapp",
+                "templates"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "description": "Defaults to `pending_approval`; pass `?status=approved`/`rejected`/`all` to see others."
+        },
+        {
+          "name": "Approve WhatsApp Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_template_name\": \"bill_ready_v1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/whatsapp/templates/{{whatsapp_template_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "whatsapp",
+                "templates",
+                "{{whatsapp_template_id}}",
+                "approve"
+              ]
+            }
+          },
+          "description": "`provider_template_name` is the exact name this template was registered under with Meta (set once actually submitted there) - required, since sending needs it. Only the \"admin\" role, not \"support\"."
+        },
+        {
+          "name": "Reject WhatsApp Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Contains discouraged promotional wording for a utility template\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/whatsapp/templates/{{whatsapp_template_id}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "whatsapp",
+                "templates",
+                "{{whatsapp_template_id}}",
+                "reject"
               ]
             }
           }
