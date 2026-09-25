@@ -18,7 +18,9 @@ defmodule Posbd.Billing do
   alias Posbd.Accounts.Scope
   alias Posbd.Businesses.{Business, Roles}
   alias Posbd.Billing.{Invoice, InvoiceItem, Payment}
+  alias Posbd.Customers.Customer
   alias Posbd.Inventory
+  alias Posbd.Loyalty
   alias Posbd.Pricing
   alias Posbd.Products.{Product, ProductVariant}
 
@@ -60,14 +62,17 @@ defmodule Posbd.Billing do
 
   defp do_create_invoice(scope, business, user, membership, attrs) do
     with {:ok, lines} <- build_lines(scope, attrs["items"]),
-         :ok <- authorize_discounts(membership, lines) do
+         :ok <- authorize_discounts(membership, lines),
+         base_totals <- compute_totals(lines),
+         {:ok, loyalty} <- resolve_loyalty(business, attrs, base_totals.total_amount) do
       result =
         Repo.transact(fn ->
-          with {:ok, invoice} <- insert_invoice(business, user, lines, attrs),
+          with {:ok, invoice} <- insert_invoice(business, user, base_totals, loyalty, attrs),
                {:ok, _items} <- insert_items(invoice, lines),
                {:ok, payments} <- insert_payments(invoice, user, attrs["payments"] || []),
                {:ok, invoice} <- apply_payment_status(invoice, payments),
-               :ok <- reduce_inventory(scope, lines, invoice.invoice_number) do
+               :ok <- reduce_inventory(scope, lines, invoice.invoice_number),
+               :ok <- apply_loyalty_ledger(scope, invoice, loyalty) do
             {:ok, preload_invoice(invoice)}
           end
         end)
@@ -88,6 +93,113 @@ defmodule Posbd.Billing do
         error ->
           error
       end
+    end
+  end
+
+  # ---- loyalty (Phase 2 §17-§20) -----------------------------------------
+
+  # Resolves how many points this bill will earn/redeem *before* the
+  # invoice is inserted, since the redemption discount changes the
+  # invoice's own `total_amount`. Returns a plain map, never touches the
+  # DB (the actual ledger writes happen inside the transaction, once the
+  # invoice - and therefore its id - exists; see `apply_loyalty_ledger/3`).
+  defp resolve_loyalty(business, attrs, base_total) do
+    customer_id = blank_to_nil(attrs["customer_id"])
+    requested = attrs["redeem_points"]
+
+    cond do
+      requested in [nil, 0, "0", ""] ->
+        points_to_earn =
+          if customer_id && Loyalty.active?(business) do
+            Loyalty.points_for_amount(Loyalty.get_program(business), base_total)
+          else
+            0
+          end
+
+        {:ok,
+         %{
+           customer_id: customer_id,
+           points_to_redeem: 0,
+           redemption_value: Decimal.new(0),
+           points_to_earn: points_to_earn
+         }}
+
+      is_nil(customer_id) ->
+        {:error, %{message: "A customer must be selected to redeem loyalty points"}}
+
+      not Loyalty.active?(business) ->
+        {:error, %{message: "Loyalty program is not enabled for this business"}}
+
+      true ->
+        with %Customer{} = customer <-
+               Repo.get_by(Customer, id: customer_id, business_id: business.id) ||
+                 {:error, %{message: "Customer not found"}} do
+          program = Loyalty.get_program(business)
+          requested_points = to_integer(requested, 0)
+
+          with {:ok, %{points: points, value: value}} <-
+                 Loyalty.quote_redemption(
+                   program,
+                   customer.loyalty_points_balance,
+                   requested_points,
+                   base_total
+                 ) do
+            net_total = Decimal.sub(base_total, value)
+            points_to_earn = Loyalty.points_for_amount(program, net_total)
+
+            {:ok,
+             %{
+               customer_id: customer_id,
+               points_to_redeem: points,
+               redemption_value: value,
+               points_to_earn: points_to_earn
+             }}
+          end
+        end
+    end
+  end
+
+  defp blank_to_nil(nil), do: nil
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(id), do: id
+
+  defp apply_loyalty_ledger(_scope, _invoice, %{points_to_redeem: 0, points_to_earn: 0}), do: :ok
+
+  defp apply_loyalty_ledger(scope, invoice, loyalty) do
+    with :ok <- maybe_redeem(scope, invoice, loyalty),
+         :ok <- maybe_earn(scope, invoice, loyalty) do
+      :ok
+    end
+  end
+
+  defp maybe_redeem(_scope, _invoice, %{points_to_redeem: 0}), do: :ok
+
+  defp maybe_redeem(scope, invoice, loyalty) do
+    write_loyalty_entry(scope, invoice, loyalty.customer_id, "redeem", -loyalty.points_to_redeem)
+  end
+
+  defp maybe_earn(_scope, _invoice, %{points_to_earn: 0}), do: :ok
+
+  defp maybe_earn(scope, invoice, loyalty) do
+    write_loyalty_entry(scope, invoice, loyalty.customer_id, "earn", loyalty.points_to_earn)
+  end
+
+  defp write_loyalty_entry(scope, invoice, customer_id, entry_type, signed_points) do
+    description =
+      case entry_type do
+        "redeem" -> "Redeemed on invoice #{invoice.invoice_number}"
+        "earn" -> "Earned on invoice #{invoice.invoice_number}"
+      end
+
+    case Loyalty.record_entry(scope, %{
+           "customer_id" => customer_id,
+           "invoice_id" => invoice.id,
+           "entry_type" => entry_type,
+           "points" => signed_points,
+           "description" => description
+         }) do
+      {:ok, _entry} -> :ok
+      {:error, _} = error -> error
     end
   end
 
@@ -302,11 +414,17 @@ defmodule Posbd.Billing do
 
   # ---- persistence -------------------------------------------------------
 
-  defp insert_invoice(business, user, lines, attrs) do
-    subtotal = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.subtotal, &2))
-    discount_amount = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.discount_amount, &2))
-    tax_amount = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.tax_amount, &2))
-    total_amount = Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.line_total, &2))
+  defp compute_totals(lines) do
+    %{
+      subtotal: Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.subtotal, &2)),
+      discount_amount: Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.discount_amount, &2)),
+      tax_amount: Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.tax_amount, &2)),
+      total_amount: Enum.reduce(lines, Decimal.new(0), &Decimal.add(&1.line_total, &2))
+    }
+  end
+
+  defp insert_invoice(business, user, totals, loyalty, attrs) do
+    total_amount = Decimal.sub(totals.total_amount, loyalty.redemption_value)
 
     with {:ok, invoice_number} <- next_invoice_number(business) do
       %Invoice{}
@@ -316,10 +434,13 @@ defmodule Posbd.Billing do
         created_by_id: user.id,
         invoice_number: invoice_number,
         currency: business.currency,
-        subtotal: subtotal,
-        discount_amount: discount_amount,
-        tax_amount: tax_amount,
+        subtotal: totals.subtotal,
+        discount_amount: totals.discount_amount,
+        tax_amount: totals.tax_amount,
         total_amount: total_amount,
+        loyalty_points_redeemed: loyalty.points_to_redeem,
+        loyalty_points_earned: loyalty.points_to_earn,
+        loyalty_discount_amount: loyalty.redemption_value,
         notes: attrs["notes"],
         idempotency_key: attrs["idempotency_key"],
         issued_at: DateTime.utc_now()

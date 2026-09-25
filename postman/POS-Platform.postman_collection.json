@@ -7,25 +7,79 @@
   },
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:4002/api/v1" },
-    { "key": "auth_token", "value": "" },
-    { "key": "business_id", "value": "" },
-    { "key": "category_id", "value": "" },
-    { "key": "product_id", "value": "" },
-    { "key": "variant_product_id", "value": "" },
-    { "key": "variant_id", "value": "" },
-    { "key": "price_tier_id", "value": "" },
-    { "key": "customer_id", "value": "" },
-    { "key": "invoice_id", "value": "" },
-    { "key": "user_email", "value": "owner@example.com" },
-    { "key": "user_password", "value": "supersecret1" },
-    { "key": "plan_id", "value": "" },
-    { "key": "admin_token", "value": "" },
-    { "key": "admin_email", "value": "admin@demo.pos" },
-    { "key": "admin_password", "value": "DemoPass123!" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:4002/api/v1"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "key": "business_id",
+      "value": ""
+    },
+    {
+      "key": "category_id",
+      "value": ""
+    },
+    {
+      "key": "product_id",
+      "value": ""
+    },
+    {
+      "key": "variant_product_id",
+      "value": ""
+    },
+    {
+      "key": "variant_id",
+      "value": ""
+    },
+    {
+      "key": "price_tier_id",
+      "value": ""
+    },
+    {
+      "key": "customer_id",
+      "value": ""
+    },
+    {
+      "key": "invoice_id",
+      "value": ""
+    },
+    {
+      "key": "user_email",
+      "value": "owner@example.com"
+    },
+    {
+      "key": "user_password",
+      "value": "supersecret1"
+    },
+    {
+      "key": "plan_id",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "admin_email",
+      "value": "admin@demo.pos"
+    },
+    {
+      "key": "admin_password",
+      "value": "DemoPass123!"
+    }
   ],
   "item": [
     {
@@ -35,12 +89,26 @@
           "name": "Register",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"user\": {\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\",\n    \"full_name\": \"Store Owner\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] }
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
           },
           "event": [
             {
@@ -59,12 +127,26 @@
           "name": "Login",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
             },
-            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
           },
           "event": [
             {
@@ -83,14 +165,31 @@
           "name": "Logout",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"] }
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
           }
         },
         {
           "name": "Current User (me)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{base_url}}/me", "host": ["{{base_url}}"], "path": ["me"] }
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
           }
         }
       ]
@@ -101,28 +200,59 @@
         {
           "name": "List Business Type Templates",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
-            "url": { "raw": "{{base_url}}/business_types", "host": ["{{base_url}}"], "path": ["business_types"] }
+            "url": {
+              "raw": "{{base_url}}/business_types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "business_types"
+              ]
+            }
           }
         },
         {
           "name": "List My Businesses",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{base_url}}/businesses", "host": ["{{base_url}}"], "path": ["businesses"] }
+            "url": {
+              "raw": "{{base_url}}/businesses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses"
+              ]
+            }
           }
         },
         {
           "name": "Create Business (Onboarding step 1)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"business\": {\n    \"name\": \"Sam's Clothing\",\n    \"business_type\": \"clothing\",\n    \"country\": \"IN\",\n    \"currency\": \"INR\",\n    \"timezone\": \"Asia/Kolkata\",\n    \"language\": \"en\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/businesses", "host": ["{{base_url}}"], "path": ["businesses"] }
+            "url": {
+              "raw": "{{base_url}}/businesses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses"
+              ]
+            }
           },
           "event": [
             {
@@ -143,8 +273,13 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/businesses/{{business_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["businesses", "{{business_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}"
+              ]
             }
           }
         },
@@ -152,15 +287,25 @@
           "name": "Update Business Settings",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"business\": {\n    \"currency\": \"USD\"\n  }\n}"
             },
             "url": {
               "raw": "{{base_url}}/businesses/{{business_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["businesses", "{{business_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}"
+              ]
             }
           }
         },
@@ -168,15 +313,25 @@
           "name": "Update Invoice / Print Settings",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"business\": {\n    \"address\": \"12 MG Road, Bengaluru\",\n    \"phone\": \"9876543210\",\n    \"email\": \"shop@example.com\",\n    \"tax_number\": \"29ABCDE1234F1Z5\",\n    \"invoice_prefix\": \"INV-\",\n    \"invoice_footer\": \"Thank you for shopping with us!\",\n    \"invoice_terms\": \"Goods once sold will not be taken back.\"\n  }\n}"
             },
             "url": {
               "raw": "{{base_url}}/businesses/{{business_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["businesses", "{{business_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}"
+              ]
             }
           }
         },
@@ -186,8 +341,14 @@
             "method": "POST",
             "url": {
               "raw": "{{base_url}}/businesses/{{business_id}}/complete_onboarding",
-              "host": ["{{base_url}}"],
-              "path": ["businesses", "{{business_id}}", "complete_onboarding"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}",
+                "complete_onboarding"
+              ]
             }
           }
         }
@@ -201,8 +362,21 @@
           "name": "List Categories",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
-            "url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] }
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
           }
         },
         {
@@ -210,11 +384,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"category\": {\n    \"name\": \"Men's Wear\"\n  }\n}" },
-            "url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": {\n    \"name\": \"Men's Wear\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
           },
           "event": [
             {
@@ -233,11 +424,21 @@
           "name": "Show Category",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/categories/{{category_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["categories", "{{category_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}"
+              ]
             }
           }
         },
@@ -246,14 +447,28 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"category\": {\n    \"name\": \"Menswear\"\n  }\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": {\n    \"name\": \"Menswear\"\n  }\n}"
+            },
             "url": {
               "raw": "{{base_url}}/categories/{{category_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["categories", "{{category_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}"
+              ]
             }
           }
         },
@@ -261,11 +476,21 @@
           "name": "Delete Category",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/categories/{{category_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["categories", "{{category_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}"
+              ]
             }
           }
         }
@@ -279,15 +504,33 @@
           "name": "List Products",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/products?search=&page=1&page_size=25",
-              "host": ["{{base_url}}"],
-              "path": ["products"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ],
               "query": [
-                { "key": "search", "value": "" },
-                { "key": "page", "value": "1" },
-                { "key": "page_size", "value": "25" }
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "25"
+                }
               ]
             }
           }
@@ -297,14 +540,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"product\": {\n    \"name\": \"Red Saree\",\n    \"category_id\": \"{{category_id}}\",\n    \"unit\": \"pcs\",\n    \"purchase_price\": \"800.00\",\n    \"selling_price\": \"1200.00\",\n    \"mrp\": \"1500.00\",\n    \"tax_rate\": \"5\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] }
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
           },
           "event": [
             {
@@ -324,14 +581,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"product\": {\n    \"name\": \"Cotton T-Shirt\",\n    \"category_id\": \"{{category_id}}\",\n    \"has_variants\": true,\n    \"unit\": \"pcs\",\n    \"tax_rate\": \"5\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] }
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
           },
           "event": [
             {
@@ -350,11 +621,21 @@
           "name": "Show Product",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/products/{{product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["products", "{{product_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
             }
           }
         },
@@ -363,14 +644,28 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"product\": {\n    \"selling_price\": \"1250.00\"\n  }\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": {\n    \"selling_price\": \"1250.00\"\n  }\n}"
+            },
             "url": {
               "raw": "{{base_url}}/products/{{product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["products", "{{product_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
             }
           }
         },
@@ -378,11 +673,21 @@
           "name": "Delete Product",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/products/{{product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["products", "{{product_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
             }
           }
         },
@@ -391,8 +696,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -400,8 +711,14 @@
             },
             "url": {
               "raw": "{{base_url}}/products/{{variant_product_id}}/variants",
-              "host": ["{{base_url}}"],
-              "path": ["products", "{{variant_product_id}}", "variants"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{variant_product_id}}",
+                "variants"
+              ]
             }
           },
           "event": [
@@ -422,8 +739,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -431,8 +754,15 @@
             },
             "url": {
               "raw": "{{base_url}}/products/{{variant_product_id}}/variants/{{variant_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["products", "{{variant_product_id}}", "variants", "{{variant_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{variant_product_id}}",
+                "variants",
+                "{{variant_id}}"
+              ]
             }
           }
         },
@@ -440,11 +770,23 @@
           "name": "Delete Variant",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/products/{{variant_product_id}}/variants/{{variant_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["products", "{{variant_product_id}}", "variants", "{{variant_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{variant_product_id}}",
+                "variants",
+                "{{variant_id}}"
+              ]
             }
           }
         }
@@ -458,8 +800,21 @@
           "name": "List Attributes",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
-            "url": { "raw": "{{base_url}}/attributes", "host": ["{{base_url}}"], "path": ["attributes"] }
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attributes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attributes"
+              ]
+            }
           }
         }
       ]
@@ -472,12 +827,26 @@
           "name": "List Price Tiers (for a product)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/price_tiers?product_id={{product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["price_tiers"],
-              "query": [{ "key": "product_id", "value": "{{product_id}}" }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "price_tiers"
+              ],
+              "query": [
+                {
+                  "key": "product_id",
+                  "value": "{{product_id}}"
+                }
+              ]
             }
           }
         },
@@ -486,14 +855,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"price_tier\": {\n    \"product_id\": \"{{product_id}}\",\n    \"label\": \"Wholesale\",\n    \"min_quantity\": 10,\n    \"price\": \"900.00\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/price_tiers", "host": ["{{base_url}}"], "path": ["price_tiers"] }
+            "url": {
+              "raw": "{{base_url}}/price_tiers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "price_tiers"
+              ]
+            }
           },
           "event": [
             {
@@ -513,14 +896,28 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"price_tier\": {\n    \"price\": \"850.00\"\n  }\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price_tier\": {\n    \"price\": \"850.00\"\n  }\n}"
+            },
             "url": {
               "raw": "{{base_url}}/price_tiers/{{price_tier_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["price_tiers", "{{price_tier_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "price_tiers",
+                "{{price_tier_id}}"
+              ]
             }
           }
         },
@@ -528,11 +925,21 @@
           "name": "Delete Price Tier",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/price_tiers/{{price_tier_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["price_tiers", "{{price_tier_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "price_tiers",
+                "{{price_tier_id}}"
+              ]
             }
           }
         },
@@ -540,14 +947,30 @@
           "name": "Quote Price (resolve unit price for a quantity)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/price_tiers/quote?product_id={{product_id}}&quantity=12",
-              "host": ["{{base_url}}"],
-              "path": ["price_tiers", "quote"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "price_tiers",
+                "quote"
+              ],
               "query": [
-                { "key": "product_id", "value": "{{product_id}}" },
-                { "key": "quantity", "value": "12" }
+                {
+                  "key": "product_id",
+                  "value": "{{product_id}}"
+                },
+                {
+                  "key": "quantity",
+                  "value": "12"
+                }
               ]
             }
           }
@@ -563,14 +986,29 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"opening_stock\",\n    \"direction\": \"in\",\n    \"quantity\": 50,\n    \"reference\": \"Opening balance\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+            "url": {
+              "raw": "{{base_url}}/inventory/movements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
+            }
           }
         },
         {
@@ -578,14 +1016,29 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"purchase\",\n    \"direction\": \"in\",\n    \"quantity\": 20,\n    \"reference\": \"PO-1023\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+            "url": {
+              "raw": "{{base_url}}/inventory/movements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
+            }
           }
         },
         {
@@ -593,14 +1046,29 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"sale\",\n    \"direction\": \"out\",\n    \"quantity\": 1,\n    \"reference\": \"INV-2044\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+            "url": {
+              "raw": "{{base_url}}/inventory/movements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
+            }
           }
         },
         {
@@ -608,29 +1076,63 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"movement\": {\n    \"product_id\": \"{{product_id}}\",\n    \"movement_type\": \"adjustment\",\n    \"direction\": \"out\",\n    \"quantity\": 2,\n    \"notes\": \"Damaged in storage\"\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/inventory/movements", "host": ["{{base_url}}"], "path": ["inventory", "movements"] }
+            "url": {
+              "raw": "{{base_url}}/inventory/movements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
+            }
           }
         },
         {
           "name": "List Movement History (for a product)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/inventory/movements?product_id={{product_id}}&page=1&page_size=25",
-              "host": ["{{base_url}}"],
-              "path": ["inventory", "movements"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ],
               "query": [
-                { "key": "product_id", "value": "{{product_id}}" },
-                { "key": "page", "value": "1" },
-                { "key": "page_size", "value": "25" }
+                {
+                  "key": "product_id",
+                  "value": "{{product_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "25"
+                }
               ]
             }
           }
@@ -645,14 +1147,30 @@
           "name": "List / Search Customers",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/customers?search=&segment=",
-              "host": ["{{base_url}}"],
-              "path": ["customers"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers"
+              ],
               "query": [
-                { "key": "search", "value": "" },
-                { "key": "segment", "value": "", "disabled": true }
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "segment",
+                  "value": "",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -661,28 +1179,77 @@
           "name": "Get Customer Purchase Summary",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/customers/{{customer_id}}/summary",
-              "host": ["{{base_url}}"],
-              "path": ["customers", "{{customer_id}}", "summary"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "{{customer_id}}",
+                "summary"
+              ]
             }
           },
           "description": "Total spend, visits, last purchase, average bill, outstanding balance, top products, and segment for one customer."
+        },
+        {
+          "name": "Get Customer Loyalty Ledger",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}/loyalty",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "{{customer_id}}",
+                "loyalty"
+              ]
+            }
+          },
+          "description": "Current points balance plus a paginated, newest-first ledger of earn/redeem/bonus/expire/adjustment entries (Phase 2 §19-§20)."
         },
         {
           "name": "Create Customer",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"customer\": {\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"9998887777\",\n    \"email\": \"priya@example.com\",\n    \"customer_type\": \"individual\",\n    \"preferred_language\": \"hi\",\n    \"date_of_birth\": \"1990-05-12\",\n    \"accepts_transactional_messages\": true,\n    \"accepts_promotional_messages\": false\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/customers", "host": ["{{base_url}}"], "path": ["customers"] }
+            "url": {
+              "raw": "{{base_url}}/customers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            }
           },
           "event": [
             {
@@ -701,11 +1268,21 @@
           "name": "Show Customer",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/customers/{{customer_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["customers", "{{customer_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "{{customer_id}}"
+              ]
             }
           }
         },
@@ -714,14 +1291,28 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"customer\": {\n    \"address\": \"12 MG Road, Bengaluru\"\n  }\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"address\": \"12 MG Road, Bengaluru\"\n  }\n}"
+            },
             "url": {
               "raw": "{{base_url}}/customers/{{customer_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["customers", "{{customer_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "{{customer_id}}"
+              ]
             }
           }
         },
@@ -729,13 +1320,83 @@
           "name": "Delete Customer",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/customers/{{customer_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["customers", "{{customer_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "{{customer_id}}"
+              ]
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "Loyalty (Phase 2)",
+      "description": "Per-business loyalty configuration (Phase 2 §17-§18). Requires the \"loyalty\" feature on the business's subscription plan (see Subscription Plans) - a business still inside its free trial gets it automatically. Earning/redemption itself happens as part of Billing > Create Invoice via the `redeem_points` field; see that folder's \"Create Invoice (with Loyalty Redemption)\" request.",
+      "item": [
+        {
+          "name": "Get Loyalty Program",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/loyalty/program",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "loyalty",
+                "program"
+              ]
+            }
+          },
+          "description": "Returns a default, disabled configuration if the business has never set one up. `active` reflects both `enabled` and plan entitlement."
+        },
+        {
+          "name": "Update Loyalty Program",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"program\": {\n    \"enabled\": true,\n    \"earn_amount_per_point\": \"100\",\n    \"redeem_value_per_point\": \"0.5\",\n    \"min_redeem_points\": 100,\n    \"max_redemption_percentage\": \"50\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/loyalty/program",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "loyalty",
+                "program"
+              ]
+            }
+          },
+          "description": "earn_amount_per_point: currency spent per 1 point earned. redeem_value_per_point: currency value of 1 point when redeemed. max_redemption_percentage: cap on how much of one bill can be paid with points."
         }
       ]
     },
@@ -748,14 +1409,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"items\": [\n    { \"product_id\": \"{{product_id}}\", \"quantity\": 2 }\n  ],\n  \"payments\": [\n    { \"method\": \"cash\", \"amount\": \"220.00\" }\n  ],\n  \"idempotency_key\": \"{{$guid}}\"\n}"
             },
-            "url": { "raw": "{{base_url}}/invoices", "host": ["{{base_url}}"], "path": ["invoices"] }
+            "url": {
+              "raw": "{{base_url}}/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ]
+            }
           },
           "event": [
             {
@@ -775,28 +1450,87 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"customer_id\": \"{{customer_id}}\",\n  \"items\": [\n    { \"product_id\": \"{{product_id}}\", \"quantity\": 3, \"discount_amount\": \"10.00\" }\n  ],\n  \"payments\": [\n    { \"method\": \"upi\", \"amount\": \"100.00\", \"reference\": \"UPI-REF-001\" }\n  ],\n  \"notes\": \"Loyal customer\",\n  \"idempotency_key\": \"{{$guid}}\"\n}"
             },
-            "url": { "raw": "{{base_url}}/invoices", "host": ["{{base_url}}"], "path": ["invoices"] }
+            "url": {
+              "raw": "{{base_url}}/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ]
+            }
           }
+        },
+        {
+          "name": "Create Invoice (with Loyalty Redemption)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"{{customer_id}}\",\n  \"redeem_points\": 40,\n  \"items\": [\n    {\n      \"product_id\": \"{{product_id}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"payments\": [\n    {\n      \"method\": \"cash\",\n      \"amount\": \"0.00\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ]
+            }
+          },
+          "description": "Loyalty is fully backend-validated (Phase 2 §17-§20): `redeem_points` is checked against the customer's real balance, the program's minimum/maximum-percentage rules, and the loyalty feature entitlement - never trust a client-computed discount. The response invoice includes `loyalty_points_redeemed`, `loyalty_discount_amount`, and `loyalty_points_earned` (earned on the post-redemption total)."
         },
         {
           "name": "List Invoices",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/invoices?page=1&page_size=25",
-              "host": ["{{base_url}}"],
-              "path": ["invoices"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "page_size", "value": "25" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "25"
+                }
               ]
             }
           }
@@ -805,11 +1539,21 @@
           "name": "Show Invoice",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/invoices/{{invoice_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["invoices", "{{invoice_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}"
+              ]
             }
           }
         },
@@ -818,8 +1562,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -827,8 +1577,14 @@
             },
             "url": {
               "raw": "{{base_url}}/invoices/{{invoice_id}}/payments",
-              "host": ["{{base_url}}"],
-              "path": ["invoices", "{{invoice_id}}", "payments"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}",
+                "payments"
+              ]
             }
           }
         },
@@ -836,11 +1592,22 @@
           "name": "Cancel / Void Invoice",
           "request": {
             "method": "POST",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/invoices/{{invoice_id}}/cancel",
-              "host": ["{{base_url}}"],
-              "path": ["invoices", "{{invoice_id}}", "cancel"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}",
+                "cancel"
+              ]
             }
           }
         }
@@ -854,14 +1621,32 @@
           "name": "Sales Summary",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/reports/sales_summary?from={{$isoTimestamp}}&to={{$isoTimestamp}}",
-              "host": ["{{base_url}}"],
-              "path": ["reports", "sales_summary"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "sales_summary"
+              ],
               "query": [
-                { "key": "from", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-01" },
-                { "key": "to", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-23" }
+                {
+                  "key": "from",
+                  "value": "{{$isoTimestamp}}",
+                  "description": "e.g. 2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "{{$isoTimestamp}}",
+                  "description": "e.g. 2026-09-23"
+                }
               ]
             }
           }
@@ -870,14 +1655,32 @@
           "name": "Daily Sales (dashboard trend)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/reports/daily_sales?from={{$isoTimestamp}}&to={{$isoTimestamp}}",
-              "host": ["{{base_url}}"],
-              "path": ["reports", "daily_sales"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "daily_sales"
+              ],
               "query": [
-                { "key": "from", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-17" },
-                { "key": "to", "value": "{{$isoTimestamp}}", "description": "e.g. 2026-09-23" }
+                {
+                  "key": "from",
+                  "value": "{{$isoTimestamp}}",
+                  "description": "e.g. 2026-09-17"
+                },
+                {
+                  "key": "to",
+                  "value": "{{$isoTimestamp}}",
+                  "description": "e.g. 2026-09-23"
+                }
               ]
             }
           }
@@ -886,15 +1689,34 @@
           "name": "Top Products",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/reports/top_products?from={{$isoTimestamp}}&to={{$isoTimestamp}}&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["reports", "top_products"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "top_products"
+              ],
               "query": [
-                { "key": "from", "value": "{{$isoTimestamp}}" },
-                { "key": "to", "value": "{{$isoTimestamp}}" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "from",
+                  "value": "{{$isoTimestamp}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{$isoTimestamp}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           }
@@ -903,11 +1725,21 @@
           "name": "Current Stock",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/reports/stock",
-              "host": ["{{base_url}}"],
-              "path": ["reports", "stock"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "stock"
+              ]
             }
           }
         },
@@ -915,14 +1747,62 @@
           "name": "Low Stock Only",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/reports/stock?low_stock_only=true",
-              "host": ["{{base_url}}"],
-              "path": ["reports", "stock"],
-              "query": [{ "key": "low_stock_only", "value": "true" }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "low_stock_only",
+                  "value": "true"
+                }
+              ]
             }
           }
+        },
+        {
+          "name": "Loyalty Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/loyalty?from=2026-09-01&to=2026-09-30",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "loyalty"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-30"
+                }
+              ]
+            }
+          },
+          "description": "Points earned/redeemed and distinct active loyalty members in the date range (Phase 2 §20)."
         }
       ]
     },
@@ -934,11 +1814,22 @@
           "name": "Download Product Import Template",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/imports/products/template",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "products", "template"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "products",
+                "template"
+              ]
             }
           }
         },
@@ -946,15 +1837,32 @@
           "name": "Preview Product Import",
           "request": {
             "method": "POST",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "body": {
               "mode": "formdata",
-              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
             },
             "url": {
               "raw": "{{base_url}}/imports/products/preview",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "products", "preview"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "products",
+                "preview"
+              ]
             }
           }
         },
@@ -963,8 +1871,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -972,8 +1886,14 @@
             },
             "url": {
               "raw": "{{base_url}}/imports/products/commit",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "products", "commit"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "products",
+                "commit"
+              ]
             }
           }
         },
@@ -981,11 +1901,22 @@
           "name": "Download Opening Stock Import Template",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/imports/opening_stock/template",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "opening_stock", "template"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "opening_stock",
+                "template"
+              ]
             }
           }
         },
@@ -993,15 +1924,32 @@
           "name": "Preview Opening Stock Import",
           "request": {
             "method": "POST",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "body": {
               "mode": "formdata",
-              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
             },
             "url": {
               "raw": "{{base_url}}/imports/opening_stock/preview",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "opening_stock", "preview"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "opening_stock",
+                "preview"
+              ]
             }
           }
         },
@@ -1010,8 +1958,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1019,8 +1973,14 @@
             },
             "url": {
               "raw": "{{base_url}}/imports/opening_stock/commit",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "opening_stock", "commit"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "opening_stock",
+                "commit"
+              ]
             }
           }
         },
@@ -1028,11 +1988,22 @@
           "name": "Download Historical Bills Import Template",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/imports/historical_bills/template",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "historical_bills", "template"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "historical_bills",
+                "template"
+              ]
             }
           }
         },
@@ -1040,15 +2011,32 @@
           "name": "Preview Historical Bills Import",
           "request": {
             "method": "POST",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "body": {
               "mode": "formdata",
-              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
             },
             "url": {
               "raw": "{{base_url}}/imports/historical_bills/preview",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "historical_bills", "preview"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "historical_bills",
+                "preview"
+              ]
             }
           }
         },
@@ -1057,8 +2045,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1066,8 +2060,14 @@
             },
             "url": {
               "raw": "{{base_url}}/imports/historical_bills/commit",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "historical_bills", "commit"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "historical_bills",
+                "commit"
+              ]
             }
           }
         },
@@ -1075,11 +2075,21 @@
           "name": "Import History",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/imports/history",
-              "host": ["{{base_url}}"],
-              "path": ["imports", "history"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imports",
+                "history"
+              ]
             }
           }
         }
@@ -1093,18 +2103,49 @@
           "name": "List Audit Logs",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/audit_logs?page=1&page_size=25",
-              "host": ["{{base_url}}"],
-              "path": ["audit_logs"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit_logs"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "page_size", "value": "25" },
-                { "key": "action", "value": "", "disabled": true },
-                { "key": "entity_type", "value": "", "disabled": true },
-                { "key": "from", "value": "", "disabled": true },
-                { "key": "to", "value": "", "disabled": true }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "25"
+                },
+                {
+                  "key": "action",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entity_type",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -1119,11 +2160,17 @@
           "name": "List Public Plans",
           "request": {
             "method": "GET",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/subscription_plans",
-              "host": ["{{base_url}}"],
-              "path": ["subscription_plans"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscription_plans"
+              ]
             }
           }
         },
@@ -1131,11 +2178,20 @@
           "name": "Get Subscription Status",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/subscription",
-              "host": ["{{base_url}}"],
-              "path": ["subscription"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscription"
+              ]
             }
           }
         },
@@ -1143,11 +2199,21 @@
           "name": "List Subscription Payments",
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-business-id", "value": "{{business_id}}" }],
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/subscription/payments",
-              "host": ["{{base_url}}"],
-              "path": ["subscription", "payments"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscription",
+                "payments"
+              ]
             }
           }
         },
@@ -1156,14 +2222,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"plan_id\": \"{{plan_id}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"{{plan_id}}\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/subscription/checkout",
-              "host": ["{{base_url}}"],
-              "path": ["subscription", "checkout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscription",
+                "checkout"
+              ]
             }
           },
           "description": "Requires 'settings.manage'. Creates a Razorpay Order and returns {order_id, key_id, amount, currency} for the frontend to open Razorpay Checkout with."
@@ -1173,8 +2253,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-business-id", "value": "{{business_id}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1182,8 +2268,14 @@
             },
             "url": {
               "raw": "{{base_url}}/subscription/checkout/verify",
-              "host": ["{{base_url}}"],
-              "path": ["subscription", "checkout", "verify"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscription",
+                "checkout",
+                "verify"
+              ]
             }
           },
           "description": "Verifies the HMAC-SHA256 signature Razorpay Checkout's success handler returns, then activates the subscription. Only callable with real values from an actual Razorpay Checkout session - not directly testable from Postman."
@@ -1192,10 +2284,18 @@
           "name": "Razorpay Webhook (reference only)",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Razorpay-Signature", "value": "computed_hmac_sha256_of_the_raw_body" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Razorpay-Signature",
+                "value": "computed_hmac_sha256_of_the_raw_body"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1203,8 +2303,13 @@
             },
             "url": {
               "raw": "{{base_url}}/webhooks/razorpay",
-              "host": ["{{base_url}}"],
-              "path": ["webhooks", "razorpay"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "razorpay"
+              ]
             }
           },
           "description": "Called directly by Razorpay, not by a client. No user auth - authenticated instead by the X-Razorpay-Signature header, an HMAC-SHA256 of the exact raw request body using the webhook secret configured in the Razorpay dashboard. Idempotent (Phase 2 §11): the same event id is only ever processed once. Not usefully callable from Postman since the signature must match this exact body byte-for-byte."
@@ -1219,13 +2324,29 @@
           "name": "Admin Login",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             },
-            "url": { "raw": "{{base_url}}/admin/login", "host": ["{{base_url}}"], "path": ["admin", "login"] }
+            "url": {
+              "raw": "{{base_url}}/admin/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "login"
+              ]
+            }
           },
           "event": [
             {
@@ -1244,36 +2365,106 @@
           "name": "Admin Me",
           "request": {
             "method": "GET",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "url": { "raw": "{{base_url}}/admin/me", "host": ["{{base_url}}"], "path": ["admin", "me"] }
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "me"
+              ]
+            }
           }
         },
         {
           "name": "Admin Logout",
           "request": {
             "method": "DELETE",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "url": { "raw": "{{base_url}}/admin/logout", "host": ["{{base_url}}"], "path": ["admin", "logout"] }
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "logout"
+              ]
+            }
           }
         },
         {
           "name": "Dashboard Summary",
           "request": {
             "method": "GET",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "url": { "raw": "{{base_url}}/admin/dashboard", "host": ["{{base_url}}"], "path": ["admin", "dashboard"] }
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard"
+              ]
+            }
           }
         },
         {
           "name": "List Businesses (with status)",
           "request": {
             "method": "GET",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
             "url": {
               "raw": "{{base_url}}/admin/businesses?status=trialing",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "businesses"],
-              "query": [{ "key": "status", "value": "trialing", "disabled": true }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "businesses"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "trialing",
+                  "disabled": true
+                }
+              ]
             }
           }
         },
@@ -1281,21 +2472,60 @@
           "name": "List Plans (incl. inactive)",
           "request": {
             "method": "GET",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "url": { "raw": "{{base_url}}/admin/plans", "host": ["{{base_url}}"], "path": ["admin", "plans"] }
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/plans",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "plans"
+              ]
+            }
           }
         },
         {
           "name": "Create Plan",
           "request": {
             "method": "POST",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"plan\": {\n    \"name\": \"Starter\",\n    \"slug\": \"starter\",\n    \"price\": \"999.00\",\n    \"currency\": \"INR\",\n    \"billing_period\": \"yearly\",\n    \"features\": { \"max_users\": 1 }\n  }\n}"
             },
-            "url": { "raw": "{{base_url}}/admin/plans", "host": ["{{base_url}}"], "path": ["admin", "plans"] }
+            "url": {
+              "raw": "{{base_url}}/admin/plans",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "plans"
+              ]
+            }
           },
           "event": [
             {
@@ -1314,16 +2544,35 @@
           "name": "Update Plan",
           "request": {
             "method": "PATCH",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"plan\": {\n    \"price\": \"1099.00\"\n  }\n}"
             },
             "url": {
               "raw": "{{base_url}}/admin/plans/{{plan_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "plans", "{{plan_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "plans",
+                "{{plan_id}}"
+              ]
             }
           }
         },
@@ -1331,16 +2580,36 @@
           "name": "Activate Plan For Business",
           "request": {
             "method": "POST",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"plan_id\": \"{{plan_id}}\",\n  \"payment_provider\": \"manual\",\n  \"provider_reference\": \"MANUAL-0001\",\n  \"notes\": \"Activated by support over phone\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/admin/businesses/{{business_id}}/activate_plan",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "businesses", "{{business_id}}", "activate_plan"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "businesses",
+                "{{business_id}}",
+                "activate_plan"
+              ]
             }
           }
         },
@@ -1348,11 +2617,26 @@
           "name": "Cancel Business Subscription",
           "request": {
             "method": "POST",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}"
+                }
+              ]
+            },
             "url": {
               "raw": "{{base_url}}/admin/businesses/{{business_id}}/cancel_subscription",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "businesses", "{{business_id}}", "cancel_subscription"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "businesses",
+                "{{business_id}}",
+                "cancel_subscription"
+              ]
             }
           }
         }

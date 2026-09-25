@@ -99,6 +99,10 @@ defmodule PosbdWeb.Router do
 
       resources "/customers", CustomerController, except: [:new, :edit]
       get "/customers/:id/summary", CustomerController, :summary
+      get "/customers/:id/loyalty", LoyaltyController, :ledger
+
+      get "/loyalty/program", LoyaltyController, :show_program
+      patch "/loyalty/program", LoyaltyController, :update_program
 
       resources "/invoices", InvoiceController, only: [:index, :create, :show]
       post "/invoices/:id/payments", InvoiceController, :add_payment
@@ -121,6 +125,7 @@ defmodule PosbdWeb.Router do
       get "/reports/daily_sales", ReportController, :daily_sales
       get "/reports/top_products", ReportController, :top_products
       get "/reports/stock", ReportController, :stock
+      get "/reports/loyalty", ReportController, :loyalty
     end
   end
 

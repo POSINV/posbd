@@ -20,6 +20,12 @@ defmodule PosbdWeb.Api.FallbackController do
     |> json(%{error: %{message: "Not found"}})
   end
 
+  def call(conn, {:error, :customer_not_found}) do
+    conn
+    |> put_status(:not_found)
+    |> json(%{error: %{message: "Customer not found"}})
+  end
+
   def call(conn, {:error, %{message: message}}) do
     conn
     |> put_status(:unprocessable_entity)

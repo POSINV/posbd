@@ -326,6 +326,109 @@ defmodule Posbd.BillingTest do
     end
   end
 
+  describe "create_invoice/2 loyalty (Phase 2 §17-§20)" do
+    setup %{scope: scope} do
+      {:ok, _program} =
+        Posbd.Loyalty.upsert_program(scope, %{
+          "enabled" => true,
+          "earn_amount_per_point" => "100",
+          "redeem_value_per_point" => "0.5",
+          "min_redeem_points" => "10",
+          "max_redemption_percentage" => "50"
+        })
+
+      %{customer: customer_fixture(scope)}
+    end
+
+    test "earns points on the final payable amount when the program is enabled", %{
+      scope: scope,
+      customer: customer
+    } do
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      assert {:ok, invoice} =
+               Billing.create_invoice(scope, %{
+                 "customer_id" => customer.id,
+                 "items" => [%{"product_id" => product.id, "quantity" => 3}]
+               })
+
+      # 300.00 spent / 100 per point = 3 points earned
+      assert invoice.loyalty_points_earned == 3
+      assert invoice.loyalty_points_redeemed == 0
+      assert Posbd.Customers.get_customer(scope, customer.id).loyalty_points_balance == 3
+    end
+
+    test "does not earn points for a walk-in sale with no customer", %{scope: scope} do
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      assert {:ok, invoice} =
+               Billing.create_invoice(scope, %{
+                 "items" => [%{"product_id" => product.id, "quantity" => 3}]
+               })
+
+      assert invoice.loyalty_points_earned == 0
+    end
+
+    test "redeems points for a discount, and only earns on the reduced total", %{
+      scope: scope,
+      customer: customer
+    } do
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      {:ok, _} =
+        Posbd.Loyalty.record_entry(scope, %{
+          "customer_id" => customer.id,
+          "entry_type" => "bonus",
+          "points" => 100
+        })
+
+      assert {:ok, invoice} =
+               Billing.create_invoice(scope, %{
+                 "customer_id" => customer.id,
+                 "redeem_points" => 40,
+                 "items" => [%{"product_id" => product.id, "quantity" => 3}]
+               })
+
+      # 40 points * 0.5 = 20.00 discount off a 300.00 bill
+      assert invoice.loyalty_points_redeemed == 40
+      assert Decimal.equal?(invoice.loyalty_discount_amount, Decimal.new("20.00"))
+      assert Decimal.equal?(invoice.total_amount, Decimal.new("280.00"))
+      # earns on the net 280.00, not the original 300.00
+      assert invoice.loyalty_points_earned == 2
+
+      # balance: 100 (bonus) - 40 (redeemed) + 2 (earned) = 62
+      assert Posbd.Customers.get_customer(scope, customer.id).loyalty_points_balance == 62
+    end
+
+    test "rejects redeeming more points than the customer has", %{
+      scope: scope,
+      customer: customer
+    } do
+      product = product_fixture(scope, selling_price: "1000.00", tax_rate: "0")
+
+      assert {:error, %{message: message}} =
+               Billing.create_invoice(scope, %{
+                 "customer_id" => customer.id,
+                 "redeem_points" => 999,
+                 "items" => [%{"product_id" => product.id, "quantity" => 1}]
+               })
+
+      assert message =~ "only has 0 points"
+    end
+
+    test "rejects redeeming loyalty points without selecting a customer", %{scope: scope} do
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      assert {:error, %{message: message}} =
+               Billing.create_invoice(scope, %{
+                 "redeem_points" => 10,
+                 "items" => [%{"product_id" => product.id, "quantity" => 1}]
+               })
+
+      assert message =~ "customer must be selected"
+    end
+  end
+
   defp seed_stock(scope, target, quantity) do
     Posbd.Inventory.record_movement(scope, target, %{
       "movement_type" => "opening_stock",

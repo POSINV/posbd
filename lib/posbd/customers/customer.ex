@@ -18,6 +18,11 @@ defmodule Posbd.Customers.Customer do
     field :customer_type, :string, default: "individual"
     field :accepts_transactional_messages, :boolean, default: true
     field :accepts_promotional_messages, :boolean, default: false
+    # Cached balance, exclusively maintained by `Posbd.Loyalty.record_entry/2`
+    # inside the same DB transaction as its ledger row (mirrors how
+    # `stock_quantity` is the cache behind `InventoryTransaction`) - never
+    # cast here, so a client can never set its own points balance.
+    field :loyalty_points_balance, :integer, default: 0
 
     belongs_to :business, Posbd.Businesses.Business
 

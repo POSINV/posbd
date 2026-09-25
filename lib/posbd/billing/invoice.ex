@@ -25,6 +25,13 @@ defmodule Posbd.Billing.Invoice do
     field :total_amount, :decimal
     field :amount_paid, :decimal, default: Decimal.new(0)
 
+    # Set once, at creation, by `Posbd.Billing`'s loyalty integration
+    # (Phase 2 §17-§20) - never changed afterwards, so an invoice always
+    # shows exactly what happened to points at the moment it was billed.
+    field :loyalty_points_redeemed, :integer, default: 0
+    field :loyalty_points_earned, :integer, default: 0
+    field :loyalty_discount_amount, :decimal, default: Decimal.new(0)
+
     field :idempotency_key, :string
     field :notes, :string
     field :issued_at, :utc_datetime_usec

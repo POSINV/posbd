@@ -35,6 +35,13 @@ defmodule PosbdWeb.Api.ReportController do
     end
   end
 
+  def loyalty(%{assigns: %{current_scope: scope}} = conn, params) do
+    with :ok <- Authorize.require(scope, "reports.view"),
+         {:ok, from, to} <- parse_range(params) do
+      render(conn, :loyalty, Reports.loyalty_summary(scope, from, to))
+    end
+  end
+
   defp parse_range(params) do
     with {:ok, from} <- parse_date(params["from"]),
          {:ok, to} <- parse_date(params["to"]) do

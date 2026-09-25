@@ -38,6 +38,24 @@ defmodule PosbdWeb.Api.ReportJSON do
     }
   end
 
+  def loyalty(%{
+        from: from,
+        to: to,
+        points_earned: earned,
+        points_redeemed: redeemed,
+        active_members: active
+      }) do
+    %{
+      data: %{
+        from: from,
+        to: to,
+        points_earned: earned,
+        points_redeemed: redeemed,
+        active_members: active
+      }
+    }
+  end
+
   def stock(%{items: items}) do
     %{
       data:

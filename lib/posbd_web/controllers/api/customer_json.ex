@@ -29,7 +29,8 @@ defmodule PosbdWeb.Api.CustomerJSON do
       preferred_language: customer.preferred_language,
       customer_type: customer.customer_type,
       accepts_transactional_messages: customer.accepts_transactional_messages,
-      accepts_promotional_messages: customer.accepts_promotional_messages
+      accepts_promotional_messages: customer.accepts_promotional_messages,
+      loyalty_points_balance: customer.loyalty_points_balance
     }
   end
 

@@ -13,6 +13,7 @@ defmodule Posbd.Reports do
   alias Posbd.Repo
   alias Posbd.Accounts.Scope
   alias Posbd.Billing.{Invoice, InvoiceItem, Payment}
+  alias Posbd.Loyalty.LoyaltyLedgerEntry
   alias Posbd.Products.{Product, ProductVariant}
 
   @doc """
@@ -150,6 +151,36 @@ defmodule Posbd.Reports do
       |> Repo.all()
 
     Enum.sort_by(products ++ variants, & &1.name)
+  end
+
+  @doc """
+  Loyalty points issued/redeemed and how many distinct customers were
+  active in the date range (Phase 2 §20) - drawn from the ledger's own
+  `inserted_at`, since that's the moment each movement actually happened.
+  """
+  def loyalty_summary(%Scope{business: business}, from, to) do
+    {from_dt, to_dt} = day_range(business, from, to)
+
+    totals =
+      LoyaltyLedgerEntry
+      |> where([e], e.business_id == ^business.id)
+      |> where([e], e.inserted_at >= ^from_dt and e.inserted_at < ^to_dt)
+      |> select([e], %{
+        points_earned:
+          coalesce(sum(fragment("CASE WHEN ? > 0 THEN ? ELSE 0 END", e.points, e.points)), 0),
+        points_redeemed:
+          coalesce(sum(fragment("CASE WHEN ? < 0 THEN -? ELSE 0 END", e.points, e.points)), 0),
+        active_members: count(e.customer_id, :distinct)
+      })
+      |> Repo.one()
+
+    %{
+      from: from,
+      to: to,
+      points_earned: totals.points_earned,
+      points_redeemed: totals.points_redeemed,
+      active_members: totals.active_members
+    }
   end
 
   defp maybe_low_stock_only(query, false), do: query
