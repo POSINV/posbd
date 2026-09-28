@@ -139,6 +139,8 @@ defmodule PosbdWeb.Router do
       resources "/whatsapp/campaigns", WhatsappCampaignController, only: [:index, :create, :show]
       post "/whatsapp/campaigns/:id/cancel", WhatsappCampaignController, :cancel
       get "/whatsapp/messages", WhatsappMessageController, :index
+
+      resources "/offers", OfferController, only: [:index, :create, :show, :update]
     end
   end
 

@@ -20,7 +20,7 @@ defmodule Posbd.Whatsapp.WhatsappTemplate do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @purposes ~w(billing payment loyalty offer custom)
+  @purposes ~w(billing payment loyalty offer birthday winback custom)
   @categories ~w(utility marketing authentication)
   @statuses ~w(draft pending_approval approved rejected)
 

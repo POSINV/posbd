@@ -87,6 +87,10 @@
     {
       "key": "whatsapp_campaign_id",
       "value": ""
+    },
+    {
+      "key": "offer_id",
+      "value": ""
     }
   ],
   "item": [
@@ -1648,7 +1652,8 @@
                 "{{whatsapp_campaign_id}}"
               ]
             }
-          }
+          },
+          "description": "Includes a `stats` breakdown (queued/sent/delivered/read/failed/total) once the campaign has been sent - Phase 2 §34 campaign analytics."
         },
         {
           "name": "Cancel Campaign",
@@ -1776,6 +1781,156 @@
       ]
     },
     {
+      "name": "Offers (Phase 2)",
+      "description": "Promotions (Phase 2 §21/§30). An offer with no `code` applies automatically to every eligible bill (the biggest eligible one wins if several qualify); a `code` requires the cashier to enter it at billing (see Billing > Create Invoice (with Offer Code)). Eligibility (validity window, minimum purchase, customer segment, usage limits) is fully backend-validated - a client can request a code, never the discount amount.",
+      "item": [
+        {
+          "name": "Create Offer (automatic, no code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offer\": {\n    \"name\": \"Everyone Saves 10%\",\n    \"discount_type\": \"percentage\",\n    \"discount_value\": \"10\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('offer_id', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Offer (coded, with limits)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offer\": {\n    \"name\": \"Festival Sale\",\n    \"code\": \"FEST20\",\n    \"discount_type\": \"percentage\",\n    \"discount_value\": \"20\",\n    \"min_purchase_amount\": \"500\",\n    \"eligible_segment\": \"all\",\n    \"usage_limit_total\": 100,\n    \"usage_limit_per_customer\": 1,\n    \"ends_at\": \"2026-12-31T18:29:59Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show Offer (with performance)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/offers/{{offer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offers",
+                "{{offer_id}}"
+              ]
+            }
+          },
+          "description": "Includes `redemption_count`/`total_discount` (Phase 2 §34 - offer performance)."
+        },
+        {
+          "name": "Deactivate Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offer\": {\n    \"status\": \"inactive\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/offers/{{offer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offers",
+                "{{offer_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Billing",
       "description": "Tenant-scoped. POST /invoices computes all pricing/tax/discount server-side from product_id/variant_id + quantity - never send a price. Passing the same idempotency_key twice returns the original invoice instead of creating a duplicate.",
       "item": [
@@ -1878,6 +2033,36 @@
             }
           },
           "description": "Loyalty is fully backend-validated (Phase 2 §17-§20): `redeem_points` is checked against the customer's real balance, the program's minimum/maximum-percentage rules, and the loyalty feature entitlement - never trust a client-computed discount. The response invoice includes `loyalty_points_redeemed`, `loyalty_discount_amount`, and `loyalty_points_earned` (earned on the post-redemption total)."
+        },
+        {
+          "name": "Create Invoice (with Offer Code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-business-id",
+                "value": "{{business_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"{{customer_id}}\",\n  \"offer_code\": \"FEST20\",\n  \"items\": [\n    {\n      \"product_id\": \"{{product_id}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ]
+            }
+          },
+          "description": "`offer_code` is optional - leave it out entirely and any *automatic* (codeless) eligible offer still applies on its own. Supplying a code that doesn't resolve to a valid, currently-usable offer is a 422 error (the cashier asked for something specific). The response invoice includes `offer_id` and `offer_discount_amount`; loyalty (if also used) earns on the post-offer total."
         },
         {
           "name": "List Invoices",

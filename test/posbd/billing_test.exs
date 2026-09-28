@@ -7,6 +7,7 @@ defmodule Posbd.BillingTest do
   import Posbd.BusinessesFixtures
   import Posbd.ProductsFixtures
   import Posbd.CustomersFixtures
+  import Posbd.MarketingFixtures
   import Posbd.PricingFixtures
   import Posbd.AccountsFixtures
 
@@ -323,6 +324,81 @@ defmodule Posbd.BillingTest do
       assert {:ok, _} = Billing.import_historical_invoice(scope, attrs)
       assert {:error, changeset} = Billing.import_historical_invoice(scope, attrs)
       assert "has already been taken" in errors_on(changeset).invoice_number
+    end
+  end
+
+  describe "create_invoice/2 offers (Phase 2 §21/§30)" do
+    test "applies an eligible automatic offer with no code needed", %{scope: scope} do
+      offer_fixture(scope, %{"discount_type" => "percentage", "discount_value" => "10"})
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      assert {:ok, invoice} =
+               Billing.create_invoice(scope, %{
+                 "items" => [%{"product_id" => product.id, "quantity" => 2}]
+               })
+
+      assert invoice.offer_id
+      assert Decimal.equal?(invoice.offer_discount_amount, Decimal.new("20.00"))
+      assert Decimal.equal?(invoice.total_amount, Decimal.new("180.00"))
+    end
+
+    test "applies a coded offer only when the code is supplied and valid", %{scope: scope} do
+      offer_fixture(scope, %{
+        "code" => "SAVE50",
+        "discount_type" => "fixed_amount",
+        "discount_value" => "50"
+      })
+
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      assert {:ok, without_code} =
+               Billing.create_invoice(scope, %{
+                 "items" => [%{"product_id" => product.id, "quantity" => 2}]
+               })
+
+      refute without_code.offer_id
+
+      assert {:ok, with_code} =
+               Billing.create_invoice(scope, %{
+                 "offer_code" => "save50",
+                 "items" => [%{"product_id" => product.id, "quantity" => 2}]
+               })
+
+      assert with_code.offer_id
+      assert Decimal.equal?(with_code.total_amount, Decimal.new("150.00"))
+    end
+
+    test "rejects an invalid code without creating the invoice", %{scope: scope} do
+      product = product_fixture(scope, selling_price: "100.00")
+
+      assert {:error, %{message: message}} =
+               Billing.create_invoice(scope, %{
+                 "offer_code" => "NOPE",
+                 "items" => [%{"product_id" => product.id, "quantity" => 1}]
+               })
+
+      assert message =~ "not found"
+    end
+
+    test "loyalty points are earned on the offer-discounted total, not the original one", %{
+      scope: scope
+    } do
+      {:ok, _} =
+        Posbd.Loyalty.upsert_program(scope, %{"enabled" => true, "earn_amount_per_point" => "100"})
+
+      offer_fixture(scope, %{"discount_type" => "fixed_amount", "discount_value" => "100"})
+      customer = customer_fixture(scope)
+      product = product_fixture(scope, selling_price: "100.00", tax_rate: "0")
+
+      assert {:ok, invoice} =
+               Billing.create_invoice(scope, %{
+                 "customer_id" => customer.id,
+                 "items" => [%{"product_id" => product.id, "quantity" => 3}]
+               })
+
+      # 300 subtotal - 100 offer = 200 net -> 2 points earned (not 3)
+      assert Decimal.equal?(invoice.offer_discount_amount, Decimal.new("100"))
+      assert invoice.loyalty_points_earned == 2
     end
   end
 

@@ -147,6 +147,30 @@ defmodule Posbd.Whatsapp do
     end)
   end
 
+  @doc "A birthday message (and, per the business's loyalty config, a birthday points bonus - see `Posbd.Marketing.run_daily_retention/1`) for one customer, if an approved `birthday`-purpose template exists and they've consented to promotional messages."
+  def notify_birthday(%Business{} = business, %Customer{} = customer) do
+    safely(fn ->
+      with %WhatsappTemplate{} = template <- find_template(business, "birthday", customer) do
+        variables = template_variables(template, [customer.name])
+        send_via_template(business, customer, template, "promotional", variables)
+      else
+        _ -> {:skip, :not_applicable}
+      end
+    end)
+  end
+
+  @doc "A 'we miss you' win-back nudge for a customer who hasn't purchased in a while, if an approved `winback`-purpose template exists and they've consented to promotional messages."
+  def notify_winback(%Business{} = business, %Customer{} = customer) do
+    safely(fn ->
+      with %WhatsappTemplate{} = template <- find_template(business, "winback", customer) do
+        variables = template_variables(template, [customer.name])
+        send_via_template(business, customer, template, "promotional", variables)
+      else
+        _ -> {:skip, :not_applicable}
+      end
+    end)
+  end
+
   defp safely(fun) do
     fun.()
   rescue
@@ -176,6 +200,12 @@ defmodule Posbd.Whatsapp do
 
   ## Core send primitive
 
+  # No more than one promotional message per customer in this window,
+  # whether it came from a campaign or automated retention (Phase 2
+  # §31/§34) - enforced here, in the one place every promotional send
+  # passes through, rather than trusted to each caller.
+  @promotional_cooldown_days 7
+
   defp send_via_template(business, customer, template, kind, variables, campaign_id \\ nil) do
     cond do
       not Subscriptions.has_feature?(business, "whatsapp") ->
@@ -190,9 +220,24 @@ defmodule Posbd.Whatsapp do
       kind == "promotional" and not customer.accepts_promotional_messages ->
         {:skip, :opted_out}
 
+      kind == "promotional" and recently_sent_promotional?(business, customer.id) ->
+        {:skip, :frequency_limited}
+
       true ->
         do_send(business, customer, template, kind, variables, campaign_id)
     end
+  end
+
+  defp recently_sent_promotional?(business, customer_id) do
+    cutoff = DateTime.add(DateTime.utc_now(), -@promotional_cooldown_days * 86_400, :second)
+
+    WhatsappMessage
+    |> where(
+      [m],
+      m.business_id == ^business.id and m.customer_id == ^customer_id and m.kind == "promotional" and
+        m.inserted_at >= ^cutoff
+    )
+    |> Repo.exists?()
   end
 
   defp do_send(business, customer, template, kind, variables, campaign_id) do
@@ -340,6 +385,26 @@ defmodule Posbd.Whatsapp do
 
   def cancel_campaign(%Scope{}, %WhatsappCampaign{}),
     do: {:error, %{message: "This campaign has already been sent"}}
+
+  @doc "Delivery status breakdown for one campaign's messages (Phase 2 §34 - campaign analytics)."
+  def campaign_stats(%Scope{business: business}, %WhatsappCampaign{} = campaign) do
+    counts =
+      WhatsappMessage
+      |> where([m], m.business_id == ^business.id and m.campaign_id == ^campaign.id)
+      |> group_by([m], m.status)
+      |> select([m], {m.status, count(m.id)})
+      |> Repo.all()
+      |> Map.new()
+
+    %{
+      queued: Map.get(counts, "queued", 0),
+      sent: Map.get(counts, "sent", 0),
+      delivered: Map.get(counts, "delivered", 0),
+      read: Map.get(counts, "read", 0),
+      failed: Map.get(counts, "failed", 0),
+      total: counts |> Map.values() |> Enum.sum()
+    }
+  end
 
   @doc "Fans a campaign out to its audience - called by `CampaignDispatchWorker`, never directly from a request."
   def dispatch_campaign(campaign_id) do

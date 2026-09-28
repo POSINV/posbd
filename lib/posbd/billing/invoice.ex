@@ -32,6 +32,11 @@ defmodule Posbd.Billing.Invoice do
     field :loyalty_points_earned, :integer, default: 0
     field :loyalty_discount_amount, :decimal, default: Decimal.new(0)
 
+    # Set once, at creation, by `Posbd.Billing`'s offer integration
+    # (Phase 2 §21/§30) - the offer discount is applied *before* loyalty
+    # redemption, so loyalty is earned on what the customer actually paid.
+    field :offer_discount_amount, :decimal, default: Decimal.new(0)
+
     field :idempotency_key, :string
     field :notes, :string
     field :issued_at, :utc_datetime_usec
@@ -39,6 +44,7 @@ defmodule Posbd.Billing.Invoice do
     belongs_to :business, Posbd.Businesses.Business
     belongs_to :customer, Posbd.Customers.Customer
     belongs_to :created_by, Posbd.Accounts.User
+    belongs_to :offer, Posbd.Marketing.Offer
 
     has_many :items, Posbd.Billing.InvoiceItem
     has_many :payments, Posbd.Billing.Payment

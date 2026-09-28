@@ -45,7 +45,14 @@ config :posbd, :whatsapp,
 config :posbd, Oban,
   repo: Posbd.Repo,
   queues: [default: 10, whatsapp: 5],
-  plugins: [{Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7}]
+  plugins: [
+    {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
+    # Birthday/win-back retention automation (Phase 2 §31), once a day for
+    # every business. 09:00 UTC is a reasonable single fixed time for an
+    # MVP; a genuinely per-business-timezone send time is a natural
+    # follow-up once this needs to feel precisely "morning" everywhere.
+    {Oban.Plugins.Cron, crontab: [{"0 9 * * *", Posbd.Marketing.RetentionWorker}]}
+  ]
 
 # Business-local report date ranges (e.g. "today") need real IANA time
 # zone rules to convert to/from UTC correctly (see AGENTS.md §22).

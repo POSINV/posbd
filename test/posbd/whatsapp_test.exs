@@ -258,6 +258,57 @@ defmodule Posbd.WhatsappTest do
       assert message.campaign_id == campaign.id
       refute Enum.any?(messages, &(&1.customer_id == opted_out.id))
     end
+
+    test "a customer already sent a promotional message recently is skipped by a second campaign (Phase 2 §34)",
+         %{
+           scope: scope
+         } do
+      template = approved_template_fixture(scope, %{"purpose" => "offer", "body" => "Hi {{1}}!"})
+      customer_fixture(scope, accepts_promotional_messages: true)
+
+      {:ok, first_campaign} =
+        Whatsapp.create_campaign(scope, %{
+          "name" => "First",
+          "audience_segment" => "all",
+          "template_id" => template.id
+        })
+
+      assert :ok = Whatsapp.dispatch_campaign(first_campaign.id)
+      assert [_first] = Repo.all(WhatsappMessage)
+
+      {:ok, second_campaign} =
+        Whatsapp.create_campaign(scope, %{
+          "name" => "Second",
+          "audience_segment" => "all",
+          "template_id" => template.id
+        })
+
+      assert :ok = Whatsapp.dispatch_campaign(second_campaign.id)
+      assert [_still_just_one] = Repo.all(WhatsappMessage)
+    end
+
+    test "campaign_stats/2 breaks down messages by status", %{scope: scope} do
+      template = approved_template_fixture(scope, %{"purpose" => "offer"})
+      customer_fixture(scope, accepts_promotional_messages: true)
+
+      {:ok, campaign} =
+        Whatsapp.create_campaign(scope, %{
+          "name" => "Flash Sale",
+          "audience_segment" => "all",
+          "template_id" => template.id
+        })
+
+      :ok = Whatsapp.dispatch_campaign(campaign.id)
+
+      assert Whatsapp.campaign_stats(scope, campaign) == %{
+               queued: 1,
+               sent: 0,
+               delivered: 0,
+               read: 0,
+               failed: 0,
+               total: 1
+             }
+    end
   end
 
   describe "process_status_update/2" do

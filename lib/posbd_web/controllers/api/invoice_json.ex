@@ -36,6 +36,8 @@ defmodule PosbdWeb.Api.InvoiceJSON do
       loyalty_points_redeemed: invoice.loyalty_points_redeemed,
       loyalty_points_earned: invoice.loyalty_points_earned,
       loyalty_discount_amount: ProductJSON.money(invoice.loyalty_discount_amount),
+      offer_id: invoice.offer_id,
+      offer_discount_amount: ProductJSON.money(invoice.offer_discount_amount),
       notes: invoice.notes,
       items: Enum.map(loaded(invoice.items), &item_json/1),
       payments: Enum.map(loaded(invoice.payments), &payment_json/1)

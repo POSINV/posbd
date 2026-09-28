@@ -15,8 +15,11 @@ defmodule PosbdWeb.Api.WhatsappCampaignController do
   def show(%{assigns: %{current_scope: scope}} = conn, %{"id" => id}) do
     with :ok <- Authorize.require(scope, "whatsapp.manage") do
       case Whatsapp.get_campaign(scope, id) do
-        nil -> {:error, :not_found}
-        campaign -> render(conn, :show, campaign: campaign)
+        nil ->
+          {:error, :not_found}
+
+        campaign ->
+          render(conn, :show, campaign: campaign, stats: Whatsapp.campaign_stats(scope, campaign))
       end
     end
   end

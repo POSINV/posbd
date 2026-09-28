@@ -21,6 +21,7 @@ defmodule Posbd.Billing do
   alias Posbd.Customers.Customer
   alias Posbd.Inventory
   alias Posbd.Loyalty
+  alias Posbd.Marketing
   alias Posbd.Pricing
   alias Posbd.Products.{Product, ProductVariant}
   alias Posbd.Whatsapp
@@ -65,14 +66,21 @@ defmodule Posbd.Billing do
     with {:ok, lines} <- build_lines(scope, attrs["items"]),
          :ok <- authorize_discounts(membership, lines),
          base_totals <- compute_totals(lines),
-         {:ok, loyalty} <- resolve_loyalty(business, attrs, base_totals.total_amount) do
+         customer <- resolve_customer(business, attrs["customer_id"]),
+         {:ok, offer_resolution} <-
+           Marketing.resolve(business, customer, attrs["offer_code"], base_totals.total_amount),
+         total_after_offer <-
+           Decimal.sub(base_totals.total_amount, offer_resolution.discount_amount),
+         {:ok, loyalty} <- resolve_loyalty(business, attrs, total_after_offer) do
       result =
         Repo.transact(fn ->
-          with {:ok, invoice} <- insert_invoice(business, user, base_totals, loyalty, attrs),
+          with {:ok, invoice} <-
+                 insert_invoice(business, user, base_totals, offer_resolution, loyalty, attrs),
                {:ok, _items} <- insert_items(invoice, lines),
                {:ok, payments} <- insert_payments(invoice, user, attrs["payments"] || []),
                {:ok, invoice} <- apply_payment_status(invoice, payments),
                :ok <- reduce_inventory(scope, lines, invoice.invoice_number),
+               :ok <- apply_offer_redemption(business, invoice, offer_resolution),
                :ok <- apply_loyalty_ledger(scope, invoice, loyalty) do
             {:ok, preload_invoice(invoice)}
           end
@@ -427,8 +435,11 @@ defmodule Posbd.Billing do
     }
   end
 
-  defp insert_invoice(business, user, totals, loyalty, attrs) do
-    total_amount = Decimal.sub(totals.total_amount, loyalty.redemption_value)
+  defp insert_invoice(business, user, totals, offer_resolution, loyalty, attrs) do
+    total_amount =
+      totals.total_amount
+      |> Decimal.sub(offer_resolution.discount_amount)
+      |> Decimal.sub(loyalty.redemption_value)
 
     with {:ok, invoice_number} <- next_invoice_number(business) do
       %Invoice{}
@@ -442,6 +453,8 @@ defmodule Posbd.Billing do
         discount_amount: totals.discount_amount,
         tax_amount: totals.tax_amount,
         total_amount: total_amount,
+        offer_id: offer_resolution.offer && offer_resolution.offer.id,
+        offer_discount_amount: offer_resolution.discount_amount,
         loyalty_points_redeemed: loyalty.points_to_redeem,
         loyalty_points_earned: loyalty.points_to_earn,
         loyalty_discount_amount: loyalty.redemption_value,
@@ -452,6 +465,24 @@ defmodule Posbd.Billing do
       |> Repo.insert()
     end
   end
+
+  defp apply_offer_redemption(_business, _invoice, %{offer: nil}), do: :ok
+
+  defp apply_offer_redemption(business, invoice, %{offer: offer, discount_amount: discount_amount}) do
+    case Marketing.record_redemption(
+           business,
+           offer,
+           invoice.customer_id,
+           invoice.id,
+           discount_amount
+         ) do
+      {:ok, _redemption} -> :ok
+      {:error, _} = error -> error
+    end
+  end
+
+  defp resolve_customer(_business, id) when id in [nil, ""], do: nil
+  defp resolve_customer(business, id), do: Repo.get_by(Customer, id: id, business_id: business.id)
 
   defp next_invoice_number(business) do
     # `select` (not a `:returning` opt - update_all has none) is what makes
