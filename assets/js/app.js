@@ -4,10 +4,10 @@
 
 // You can include dependencies in two ways.
 //
-// The simplest option is to put them in assets/vendor and
+// The simplest option is to put them in assets/third_party and
 // import them using relative paths:
 //
-//     import "../vendor/some-package.js"
+//     import "../third_party/some-package.js"
 //
 // Alternatively, you can `npm install some-package --prefix assets` and import
 // them using a path starting with the package name:
@@ -23,7 +23,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/posbd"
-import topbar from "../vendor/topbar"
+import topbar from "../third_party/topbar"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {

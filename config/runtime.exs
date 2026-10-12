@@ -31,7 +31,7 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :posbd, Posbd.Repo,
-    # ssl: true,
+    ssl: [verify: :verify_none],
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     # For machines with several cores, consider starting multiple pools of `pool_size`
@@ -65,6 +65,14 @@ if config_env() == :prod do
     phone_number_id: System.get_env("WHATSAPP_PHONE_NUMBER_ID"),
     app_secret: System.get_env("WHATSAPP_APP_SECRET"),
     webhook_verify_token: System.get_env("WHATSAPP_WEBHOOK_VERIFY_TOKEN")
+
+  # Comma-separated frontend origins allowed to call the API from a browser,
+  # e.g. CORS_ORIGINS=https://posfd.vercel.app,https://pos.example.com
+  if cors_origins = System.get_env("CORS_ORIGINS") do
+    config :posbd,
+           :cors_origins,
+           cors_origins |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+  end
 
   config :posbd, PosbdWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],

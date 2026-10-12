@@ -35,3 +35,7 @@ posbd-*.tar
 npm-debug.log
 /assets/node_modules/
 
+
+# Production secrets for "velixir env import" - never commit.
+.env
+.env.*
