@@ -34,6 +34,13 @@ defmodule Posbd.Whatsapp.SendMessageWorker do
         message |> WhatsappMessage.sent_changeset(provider_message_id) |> Repo.update()
         :ok
 
+      # WhatsApp is turned off in this environment (local dev) - record why
+      # on the message and stop, rather than retrying something that can
+      # never succeed here.
+      {:error, %{message: reason, integration_disabled: true}} ->
+        message |> WhatsappMessage.failed_changeset(reason) |> Repo.update()
+        {:cancel, reason}
+
       {:error, %{message: reason}} ->
         message |> WhatsappMessage.failed_changeset(reason) |> Repo.update()
         {:error, reason}

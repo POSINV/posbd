@@ -55,4 +55,9 @@ config :posbd, :whatsapp,
 # Jobs are enqueued as real rows but never auto-executed by a running
 # queue during tests - each test asserts on the enqueued job (or runs it
 # explicitly via `Oban.Testing`) instead of racing a background process.
+# Provider calls are stubbed with Req.Test above, so the real integration
+# code paths run in tests. Tests for the local "disabled" behaviour flip
+# this off themselves.
+config :posbd, app_env: "test", integrations_enabled: true
+
 config :posbd, Oban, testing: :manual

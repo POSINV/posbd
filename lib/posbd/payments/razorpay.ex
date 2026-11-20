@@ -32,6 +32,14 @@ defmodule Posbd.Payments.Razorpay do
   converted here rather than asking every caller to remember that.
   """
   def create_order(%Decimal{} = amount, currency, receipt) do
+    if Posbd.Integrations.enabled?(:razorpay) do
+      do_create_order(amount, currency, receipt)
+    else
+      Posbd.Integrations.disabled_error(:razorpay)
+    end
+  end
+
+  defp do_create_order(amount, currency, receipt) do
     paise = amount |> Decimal.mult(100) |> Decimal.round(0) |> Decimal.to_integer()
 
     req()

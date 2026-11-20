@@ -9,8 +9,11 @@ defmodule PosbdWeb.Api.RazorpayWebhookController do
 
   use PosbdWeb, :controller
 
+  alias Posbd.Integrations
   alias Posbd.Payments.Razorpay
   alias Posbd.Subscriptions
+
+  plug :require_integration_enabled
 
   def create(conn, params) do
     raw_body = conn.assigns[:raw_body] || ""
@@ -53,5 +56,18 @@ defmodule PosbdWeb.Api.RazorpayWebhookController do
   defp fallback_event_id(params) do
     payment_id = get_in(params, ["payload", "payment", "entity", "id"])
     "#{params["event"]}-#{payment_id}-#{params["created_at"]}"
+  end
+
+  # Razorpay only runs in staging/production - a local server never acts
+  # on a payment webhook.
+  defp require_integration_enabled(conn, _opts) do
+    if Integrations.enabled?(:razorpay) do
+      conn
+    else
+      conn
+      |> put_status(:service_unavailable)
+      |> json(%{error: %{message: Integrations.disabled_message(:razorpay)}})
+      |> halt()
+    end
   end
 end

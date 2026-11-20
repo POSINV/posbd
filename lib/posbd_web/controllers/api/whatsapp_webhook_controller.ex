@@ -9,7 +9,10 @@ defmodule PosbdWeb.Api.WhatsappWebhookController do
 
   use PosbdWeb, :controller
 
+  alias Posbd.Integrations
   alias Posbd.Whatsapp
+
+  plug :require_integration_enabled
 
   def verify(conn, %{
         "hub.mode" => "subscribe",
@@ -60,4 +63,17 @@ defmodule PosbdWeb.Api.WhatsappWebhookController do
   end
 
   defp statuses_from(_params), do: []
+
+  # WhatsApp only runs in staging/production - a local server neither
+  # subscribes to nor acts on Meta's webhook.
+  defp require_integration_enabled(conn, _opts) do
+    if Integrations.enabled?(:whatsapp) do
+      conn
+    else
+      conn
+      |> put_status(:service_unavailable)
+      |> json(%{error: %{message: Integrations.disabled_message(:whatsapp)}})
+      |> halt()
+    end
+  end
 end

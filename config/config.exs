@@ -16,6 +16,11 @@ config :posbd,
 # application logic.
 config :posbd, :subscriptions, trial_period_days: 30
 
+# Deployment environment and the switch for external integrations (email,
+# WhatsApp, Razorpay). Off by default; config/runtime.exs turns them on
+# for APP_ENV=staging/production. See Posbd.Integrations.
+config :posbd, app_env: "local", integrations_enabled: false
+
 # Razorpay powers real subscription checkout (Phase 2 §10/§11). Real keys
 # are supplied per-environment (config/dev.exs reads env vars; prod comes
 # from config/runtime.exs); `req_options` lets tests swap in `Req.Test`

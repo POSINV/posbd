@@ -55,6 +55,60 @@ if config_env() == :prod do
 
   config :posbd, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # Staging and production are both MIX_ENV=prod builds; APP_ENV tells
+  # them apart. Email, WhatsApp and Razorpay only run in staging and
+  # production - APP_ENV=local switches them all off (Posbd.Integrations).
+  # Defaults to "production" so existing deployments behave as before.
+  app_env = System.get_env("APP_ENV", "production")
+
+  unless app_env in ~w(local staging production) do
+    raise "APP_ENV must be one of local, staging, production (got: #{inspect(app_env)})"
+  end
+
+  integrations_enabled = app_env in ~w(staging production)
+
+  config :posbd, app_env: app_env, integrations_enabled: integrations_enabled
+
+  # Email: a real provider is only configured in staging/production, and
+  # only when MAIL_PROVIDER is set. Otherwise mail stays on the in-memory
+  # Swoosh.Adapters.Local adapter and nothing leaves the server.
+  if integrations_enabled do
+    case System.get_env("MAIL_PROVIDER") do
+      nil ->
+        :ok
+
+      "brevo" ->
+        config :posbd, Posbd.Mailer,
+          adapter: Swoosh.Adapters.Brevo,
+          api_key: System.fetch_env!("MAIL_API_KEY")
+
+      "sendgrid" ->
+        config :posbd, Posbd.Mailer,
+          adapter: Swoosh.Adapters.Sendgrid,
+          api_key: System.fetch_env!("MAIL_API_KEY")
+
+      "postmark" ->
+        config :posbd, Posbd.Mailer,
+          adapter: Swoosh.Adapters.Postmark,
+          api_key: System.fetch_env!("MAIL_API_KEY")
+
+      "resend" ->
+        config :posbd, Posbd.Mailer,
+          adapter: Swoosh.Adapters.Resend,
+          api_key: System.fetch_env!("MAIL_API_KEY")
+
+      "mailgun" ->
+        config :posbd, Posbd.Mailer,
+          adapter: Swoosh.Adapters.Mailgun,
+          api_key: System.fetch_env!("MAIL_API_KEY"),
+          domain: System.fetch_env!("MAIL_DOMAIN")
+
+      other ->
+        raise "Unsupported MAIL_PROVIDER #{inspect(other)} " <>
+                "(expected brevo, sendgrid, postmark, resend or mailgun)"
+    end
+  end
+
   config :posbd, :razorpay,
     key_id: System.get_env("RAZORPAY_KEY_ID"),
     key_secret: System.get_env("RAZORPAY_KEY_SECRET"),

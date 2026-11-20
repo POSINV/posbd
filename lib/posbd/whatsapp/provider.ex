@@ -29,6 +29,14 @@ defmodule Posbd.Whatsapp.Provider do
   substituted for `{{1}}`, `{{2}}`, ... in order).
   """
   def send_template_message(to, provider_template_name, language_code, variables) do
+    if Posbd.Integrations.enabled?(:whatsapp) do
+      do_send_template_message(to, provider_template_name, language_code, variables)
+    else
+      Posbd.Integrations.disabled_error(:whatsapp)
+    end
+  end
+
+  defp do_send_template_message(to, provider_template_name, language_code, variables) do
     body = %{
       messaging_product: "whatsapp",
       to: to,

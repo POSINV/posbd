@@ -44,6 +44,7 @@ defmodule PosbdWeb.Router do
     post "/auth/login", AuthController, :login
     get "/business_types", BusinessController, :templates
     get "/subscription_plans", SubscriptionController, :public_plans
+    get "/app_config", AppConfigController, :show
 
     post "/admin/login", Admin.SessionController, :login
 

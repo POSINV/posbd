@@ -94,18 +94,8 @@ config :phoenix_live_view, :colocated_js, disable_symlink_warning: true
 # Origins allowed to call the API (the Vue dev server).
 config :posbd, :cors_origins, ["http://localhost:5173", "http://127.0.0.1:5173"]
 
-# Razorpay test-mode keys (https://dashboard.razorpay.com -> Settings ->
-# API Keys, in Test Mode). Subscription checkout simply won't work until
-# these are set - nothing else in the app depends on them.
-config :posbd, :razorpay,
-  key_id: System.get_env("RAZORPAY_KEY_ID"),
-  key_secret: System.get_env("RAZORPAY_KEY_SECRET"),
-  webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET")
-
-# WhatsApp (Meta) test-mode credentials (https://developers.facebook.com/apps
-# -> WhatsApp -> API Setup). Sending simply won't work until these are set.
-config :posbd, :whatsapp,
-  access_token: System.get_env("WHATSAPP_ACCESS_TOKEN"),
-  phone_number_id: System.get_env("WHATSAPP_PHONE_NUMBER_ID"),
-  app_secret: System.get_env("WHATSAPP_APP_SECRET"),
-  webhook_verify_token: System.get_env("WHATSAPP_WEBHOOK_VERIFY_TOKEN")
+# Local development never talks to Razorpay, WhatsApp (Meta) or a real
+# email provider - they only run in staging and production (see
+# Posbd.Integrations and config/runtime.exs). Emails stay in the local
+# mailbox at /dev/mailbox.
+config :posbd, app_env: "local", integrations_enabled: false
