@@ -80,11 +80,16 @@ defmodule Posbd.Whatsapp.Provider do
 
   @doc "Verifies the `X-Hub-Signature-256` header on an inbound webhook delivery against the *raw* request body."
   def verify_webhook_signature(raw_body, "sha256=" <> signature) do
-    expected =
-      :crypto.mac(:hmac, :sha256, config()[:app_secret] || "", raw_body)
-      |> Base.encode16(case: :lower)
+    case config()[:app_secret] do
+      # A missing/blank app secret must never verify anything - an
+      # empty-key HMAC is computable by anyone.
+      secret when is_binary(secret) and secret != "" ->
+        expected = :crypto.mac(:hmac, :sha256, secret, raw_body) |> Base.encode16(case: :lower)
+        secure_compare(expected, signature)
 
-    secure_compare(expected, signature)
+      _ ->
+        false
+    end
   end
 
   def verify_webhook_signature(_raw_body, _signature), do: false

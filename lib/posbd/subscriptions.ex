@@ -36,6 +36,21 @@ defmodule Posbd.Subscriptions do
 
   def get_plan(id), do: Repo.get(SubscriptionPlan, id)
 
+  @doc """
+  A plan a business may buy itself: active and with a positive price.
+  Self-service checkout must use this, never `get_plan/1`, so an
+  inactive/legacy or zero-priced plan can't be bought by sending its id.
+  """
+  def get_purchasable_plan(id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(id),
+         %SubscriptionPlan{is_active: true} = plan <- Repo.get(SubscriptionPlan, uuid),
+         true <- Decimal.gt?(plan.price, 0) do
+      plan
+    else
+      _ -> nil
+    end
+  end
+
   def create_plan(attrs) do
     %SubscriptionPlan{}
     |> SubscriptionPlan.changeset(attrs)
@@ -97,6 +112,31 @@ defmodule Posbd.Subscriptions do
     end
   end
 
+  @doc """
+  Creates the subscription record for a business that isn't entitled to a
+  free trial (its owner already used theirs). The trial ends immediately,
+  so the business is blocked until it buys a plan. Idempotent like
+  `start_trial/1`.
+  """
+  def start_without_trial(%Business{} = business) do
+    case get_subscription(business) do
+      nil ->
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+        %Subscription{}
+        |> Subscription.changeset(%{
+          business_id: business.id,
+          status: "trialing",
+          trial_started_at: now,
+          trial_ends_at: now
+        })
+        |> Repo.insert()
+
+      %Subscription{} = existing ->
+        {:ok, existing}
+    end
+  end
+
   def trial_period_days do
     Application.get_env(:posbd, :subscriptions, [])
     |> Keyword.get(:trial_period_days, 30)
@@ -135,7 +175,7 @@ defmodule Posbd.Subscriptions do
           case status do
             s when s in [:trialing, :trial_ending_soon] -> sub.trial_ends_at
             s when s in [:active, :renewal_due] -> sub.current_period_end
-            :grace_period -> sub.grace_period_ends_at
+            :grace_period -> Lifecycle.grace_deadline(sub)
             _ -> nil
           end
 
@@ -287,7 +327,11 @@ defmodule Posbd.Subscriptions do
 
   defp complete_checkout_payment(business, payment, plan, provider_payment_id) do
     Repo.transact(fn ->
-      with {:ok, sub, now, period_end} <- activate_subscription_period(business, plan),
+      # Re-read the payment under a row lock and require it to still be
+      # pending: the browser's verify call and Razorpay's webhook can race,
+      # and only one of them may activate the period.
+      with %SubscriptionPayment{} = payment <- lock_pending_payment(payment.id),
+           {:ok, sub, now, period_end} <- activate_subscription_period(business, plan),
            {:ok, payment} <-
              payment
              |> SubscriptionPayment.changeset(%{
@@ -300,8 +344,19 @@ defmodule Posbd.Subscriptions do
              })
              |> Repo.update() do
         {:ok, %{subscription: sub, payment: payment}}
+      else
+        nil -> {:error, %{message: "This payment has already been processed"}}
+        error -> error
       end
     end)
+  end
+
+  defp lock_pending_payment(payment_id) do
+    from(p in SubscriptionPayment,
+      where: p.id == ^payment_id and p.status == "pending",
+      lock: "FOR UPDATE"
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -338,7 +393,8 @@ defmodule Posbd.Subscriptions do
          %SubscriptionPayment{status: "pending"} = payment <-
            Repo.get_by(SubscriptionPayment, provider_order_id: order_id)
            |> maybe_preload(:plan)
-           |> maybe_preload(:business) do
+           |> maybe_preload(:business),
+         true <- captured_amount_matches?(event.payload, payment) do
       complete_checkout_payment(payment.business, payment, payment.plan, provider_payment_id)
       mark_webhook(event, "processed")
     else
@@ -365,6 +421,25 @@ defmodule Posbd.Subscriptions do
        do: {:ok, order_id, payment_id}
 
   defp extract_payment_ids(_), do: :error
+
+  # Defence in depth on top of the signature: the captured amount and
+  # currency must be exactly what we charged for this payment record.
+  defp captured_amount_matches?(
+         %{
+           "payload" => %{
+             "payment" => %{"entity" => %{"amount" => amount, "currency" => currency}}
+           }
+         },
+         %SubscriptionPayment{} = payment
+       )
+       when is_integer(amount) and is_binary(currency) do
+    expected_paise =
+      payment.amount |> Decimal.mult(100) |> Decimal.round(0) |> Decimal.to_integer()
+
+    amount == expected_paise and String.upcase(currency) == String.upcase(payment.currency)
+  end
+
+  defp captured_amount_matches?(_payload, _payment), do: false
 
   defp maybe_preload(nil, _assoc), do: nil
   defp maybe_preload(record, assoc), do: Repo.preload(record, assoc)

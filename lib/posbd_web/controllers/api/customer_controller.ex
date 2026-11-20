@@ -7,7 +7,9 @@ defmodule PosbdWeb.Api.CustomerController do
   action_fallback PosbdWeb.Api.FallbackController
 
   def index(%{assigns: %{current_scope: scope}} = conn, params) do
-    render(conn, :index, rows: Customers.list_customers(scope, params))
+    with :ok <- Authorize.require(scope, "customers.view") do
+      render(conn, :index, rows: Customers.list_customers(scope, params))
+    end
   end
 
   def create(%{assigns: %{current_scope: scope}} = conn, %{"customer" => params}) do
@@ -18,17 +20,21 @@ defmodule PosbdWeb.Api.CustomerController do
   end
 
   def show(%{assigns: %{current_scope: scope}} = conn, %{"id" => id}) do
-    case Customers.get_customer(scope, id) do
-      nil -> {:error, :not_found}
-      customer -> render(conn, :show, customer: customer)
+    with :ok <- Authorize.require(scope, "customers.view") do
+      case Customers.get_customer(scope, id) do
+        nil -> {:error, :not_found}
+        customer -> render(conn, :show, customer: customer)
+      end
     end
   end
 
   @doc "Purchase history summary (Phase 2 §16/§33) - total spend, visits, last purchase, top products, outstanding balance, and segment."
   def summary(%{assigns: %{current_scope: scope}} = conn, %{"id" => id}) do
-    case Customers.get_customer(scope, id) do
-      nil -> {:error, :not_found}
-      customer -> render(conn, :summary, summary: Customers.purchase_summary(scope, customer))
+    with :ok <- Authorize.require(scope, "customers.view") do
+      case Customers.get_customer(scope, id) do
+        nil -> {:error, :not_found}
+        customer -> render(conn, :summary, summary: Customers.purchase_summary(scope, customer))
+      end
     end
   end
 

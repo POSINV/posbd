@@ -19,9 +19,11 @@ defmodule PosbdWeb.Api.WhatsappWebhookController do
         "hub.verify_token" => token,
         "hub.challenge" => challenge
       }) do
-    expected = Whatsapp.Provider.webhook_verify_token() || ""
+    expected = Whatsapp.Provider.webhook_verify_token()
 
-    if is_binary(token) and Plug.Crypto.secure_compare(token, expected) do
+    # An unset verify token must not let `hub.verify_token=` (empty) pass.
+    if is_binary(expected) and expected != "" and is_binary(token) and
+         Plug.Crypto.secure_compare(token, expected) do
       send_resp(conn, 200, challenge)
     else
       send_resp(conn, 403, "")

@@ -34,15 +34,33 @@ defmodule Posbd.Businesses do
   """
   def create_business(%Scope{user: user}, attrs) do
     Repo.transact(fn ->
+      # Lock the user row so two concurrent creates can't both see "no
+      # business yet" and each get a free trial.
+      Repo.one!(from u in Posbd.Accounts.User, where: u.id == ^user.id, lock: "FOR UPDATE")
+      first_business? = not owns_any_business?(user)
+
       with {:ok, business} <- %Business{} |> Business.changeset(attrs) |> Repo.insert(),
            {:ok, _membership} <-
              %Membership{}
              |> Membership.owner_changeset(business.id, user.id)
              |> Repo.insert(),
-           {:ok, _subscription} <- Subscriptions.start_trial(business) do
+           {:ok, _subscription} <- start_subscription(business, first_business?) do
         {:ok, business}
       end
     end)
+  end
+
+  # One free trial per user: only the first business someone owns gets a
+  # trial. Otherwise creating a new business every month would mean free
+  # use forever. Later businesses start with the trial already over, so
+  # they must choose a plan before using the app.
+  defp start_subscription(business, true = _first_business?),
+    do: Subscriptions.start_trial(business)
+
+  defp start_subscription(business, false), do: Subscriptions.start_without_trial(business)
+
+  defp owns_any_business?(user) do
+    Repo.exists?(from m in Membership, where: m.user_id == ^user.id and m.role == "owner")
   end
 
   @doc "Fetches a business by id with no user/membership scoping - platform-admin use only, never exposed to tenant-scoped routes."

@@ -50,6 +50,7 @@ defmodule Posbd.Products.Product do
     |> validate_number(:mrp, greater_than_or_equal_to: 0)
     |> validate_number(:tax_rate, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_number(:reorder_level, greater_than_or_equal_to: 0)
+    |> Posbd.TenantValidation.validate_same_business(:category_id, Posbd.Categories.Category)
     |> foreign_key_constraint(:category_id)
     |> unique_constraint([:business_id, :sku],
       name: :products_business_id_sku_index,

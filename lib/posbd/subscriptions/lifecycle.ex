@@ -39,12 +39,38 @@ defmodule Posbd.Subscriptions.Lifecycle do
 
   defp active_status(%{current_period_end: nil}, _now), do: :active
 
+  # Once a paid period ends without renewal the business gets a short
+  # grace period, then is suspended. Without this an `active` row whose
+  # period ended would stay entitled forever - one payment, lifetime access.
   defp active_status(%{current_period_end: period_end}, now) do
     cond do
-      DateTime.compare(now, period_end) == :gt -> :renewal_due
+      DateTime.compare(now, lapsed_grace_deadline(period_end)) == :gt -> :suspended
+      DateTime.compare(now, period_end) == :gt -> :grace_period
       days_until(period_end, now) <= @warning_window_days -> :renewal_due
       true -> :active
     end
+  end
+
+  @doc """
+  When the grace period of a subscription ends: the stored
+  `grace_period_ends_at`, or for a paid period that lapsed without renewal,
+  `current_period_end` plus the configured grace days. `nil` if neither applies.
+  """
+  def grace_deadline(%Subscription{grace_period_ends_at: %DateTime{} = ends_at}), do: ends_at
+
+  def grace_deadline(%Subscription{
+        status: "active",
+        current_period_end: %DateTime{} = period_end
+      }),
+      do: lapsed_grace_deadline(period_end)
+
+  def grace_deadline(_sub), do: nil
+
+  defp lapsed_grace_deadline(period_end),
+    do: DateTime.add(period_end, grace_period_days() * 86_400, :second)
+
+  defp grace_period_days do
+    Application.get_env(:posbd, :subscriptions, []) |> Keyword.get(:grace_period_days, 7)
   end
 
   defp trialing_status(%{trial_ends_at: nil}, _now), do: :trialing

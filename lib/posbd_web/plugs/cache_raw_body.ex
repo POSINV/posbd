@@ -8,7 +8,17 @@ defmodule PosbdWeb.Plugs.CacheRawBody do
   """
 
   def read_body(conn, opts) do
-    {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
-    {:ok, body, Plug.Conn.assign(conn, :raw_body, body)}
+    case Plug.Conn.read_body(conn, opts) do
+      {:ok, body, conn} -> {:ok, body, maybe_cache(conn, body)}
+      other -> other
+    end
   end
+
+  # Only webhook routes need the raw bytes. Keeping every request's raw
+  # body (e.g. login passwords) around in assigns would just widen what
+  # can end up in crash reports or debug output.
+  defp maybe_cache(%Plug.Conn{path_info: ["api", "v1", "webhooks" | _]} = conn, body),
+    do: Plug.Conn.assign(conn, :raw_body, body)
+
+  defp maybe_cache(conn, _body), do: conn
 end

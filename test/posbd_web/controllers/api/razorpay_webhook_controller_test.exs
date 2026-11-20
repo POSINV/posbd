@@ -29,7 +29,14 @@ defmodule PosbdWeb.Api.RazorpayWebhookControllerTest do
     body = %{
       "event" => "payment.captured",
       "payload" => %{
-        "payment" => %{"entity" => %{"id" => "pay_hook1", "order_id" => "order_hook1"}}
+        "payment" => %{
+          "entity" => %{
+            "id" => "pay_hook1",
+            "order_id" => "order_hook1",
+            "amount" => 99_900,
+            "currency" => "INR"
+          }
+        }
       }
     }
 

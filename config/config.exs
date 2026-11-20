@@ -14,7 +14,9 @@ config :posbd,
 # Phase 2 SaaS subscription defaults (AGENTS.md / Phase 2 §4) - kept as
 # config, not hardcoded, so the trial length can change without touching
 # application logic.
-config :posbd, :subscriptions, trial_period_days: 30
+# grace_period_days: how long a paid plan keeps working after its period
+# ends without renewal, before the business is suspended.
+config :posbd, :subscriptions, trial_period_days: 30, grace_period_days: 7
 
 # Deployment environment and the switch for external integrations (email,
 # WhatsApp, Razorpay). Off by default; config/runtime.exs turns them on

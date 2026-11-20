@@ -8,17 +8,29 @@ defmodule PosbdWeb.Api.Admin.SessionController do
   action_fallback PosbdWeb.Api.FallbackController
 
   @doc "There is no admin self-registration endpoint - accounts are created out-of-band by someone who already has one."
-  def login(conn, %{"email" => email, "password" => password}) do
-    case PlatformAdmins.get_by_email_and_password(email, password) do
-      nil ->
-        conn
-        |> put_status(:unauthorized)
-        |> json(%{error: %{message: "Invalid email or password"}})
+  def login(conn, %{"email" => email, "password" => password})
+      when is_binary(email) and is_binary(password) do
+    with :ok <- PosbdWeb.LoginThrottle.check(conn, :platform_admin, email) do
+      case PlatformAdmins.get_by_email_and_password(email, password) do
+        nil ->
+          invalid_credentials(conn)
 
-      admin ->
-        token = PlatformAdmins.create_api_token(admin)
-        render(conn, :session, admin: admin, token: token)
+        admin ->
+          PosbdWeb.LoginThrottle.reset(:platform_admin, email)
+          token = PlatformAdmins.create_api_token(admin)
+          render(conn, :session, admin: admin, token: token)
+      end
+    else
+      {:halt, conn} -> conn
     end
+  end
+
+  def login(conn, _params), do: invalid_credentials(conn)
+
+  defp invalid_credentials(conn) do
+    conn
+    |> put_status(:unauthorized)
+    |> json(%{error: %{message: "Invalid email or password"}})
   end
 
   def me(%{assigns: %{current_platform_admin: admin}} = conn, _params) do

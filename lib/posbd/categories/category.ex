@@ -27,8 +27,18 @@ defmodule Posbd.Categories.Category do
     |> cast(attrs, [:name, :parent_id, :position, :active])
     |> validate_required([:name])
     |> validate_length(:name, min: 1, max: 160)
+    |> Posbd.TenantValidation.validate_same_business(:parent_id, __MODULE__)
+    |> validate_not_own_parent()
     |> put_slug()
     |> unique_constraint([:business_id, :slug], error_key: :name)
+  end
+
+  defp validate_not_own_parent(changeset) do
+    validate_change(changeset, :parent_id, fn :parent_id, parent_id ->
+      if parent_id == get_field(changeset, :id),
+        do: [parent_id: "can't be the category itself"],
+        else: []
+    end)
   end
 
   defp put_slug(changeset) do

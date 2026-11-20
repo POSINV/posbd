@@ -66,7 +66,7 @@ defmodule Posbd.Billing do
     with {:ok, lines} <- build_lines(scope, attrs["items"]),
          :ok <- authorize_discounts(membership, lines),
          base_totals <- compute_totals(lines),
-         customer <- resolve_customer(business, attrs["customer_id"]),
+         {:ok, customer} <- resolve_customer(business, attrs["customer_id"]),
          {:ok, offer_resolution} <-
            Marketing.resolve(business, customer, attrs["offer_code"], base_totals.total_amount),
          total_after_offer <-
@@ -481,8 +481,20 @@ defmodule Posbd.Billing do
     end
   end
 
-  defp resolve_customer(_business, id) when id in [nil, ""], do: nil
-  defp resolve_customer(business, id), do: Repo.get_by(Customer, id: id, business_id: business.id)
+  # A customer_id that isn't one of *this* business's customers is
+  # rejected outright. Otherwise the raw id would still be written onto the
+  # invoice and the loyalty ledger, linking (and later exposing/messaging)
+  # another tenant's customer.
+  defp resolve_customer(_business, id) when id in [nil, ""], do: {:ok, nil}
+
+  defp resolve_customer(business, id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(id),
+         %Customer{} = customer <- Repo.get_by(Customer, id: uuid, business_id: business.id) do
+      {:ok, customer}
+    else
+      _ -> {:error, %{message: "Customer not found"}}
+    end
+  end
 
   defp next_invoice_number(business) do
     # `select` (not a `:returning` opt - update_all has none) is what makes

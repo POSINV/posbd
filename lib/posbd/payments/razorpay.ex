@@ -77,9 +77,14 @@ defmodule Posbd.Payments.Razorpay do
     secure_compare(expected, signature)
   end
 
-  defp hmac(secret, data) do
-    :crypto.mac(:hmac, :sha256, secret || "", data) |> Base.encode16(case: :lower)
+  # A missing/blank secret must never verify anything: HMAC with an empty
+  # key is computable by anyone, so it would let a forged webhook or
+  # checkout callback activate a subscription without paying.
+  defp hmac(secret, data) when is_binary(secret) and secret != "" do
+    :crypto.mac(:hmac, :sha256, secret, data) |> Base.encode16(case: :lower)
   end
+
+  defp hmac(_secret, _data), do: nil
 
   defp secure_compare(a, b) when is_binary(a) and is_binary(b),
     do: Plug.Crypto.secure_compare(a, b)

@@ -150,7 +150,8 @@ defmodule Posbd.Loyalty do
     points = attrs["points"]
 
     Repo.transact(fn ->
-      with %Customer{} = customer <- lock_customer(customer_id) || {:error, :customer_not_found},
+      with %Customer{} = customer <-
+             lock_customer(business, customer_id) || {:error, :customer_not_found},
            new_balance = customer.loyalty_points_balance + points,
            :ok <- check_non_negative(new_balance),
            {1, _} <-
@@ -169,10 +170,15 @@ defmodule Posbd.Loyalty do
     end)
   end
 
-  defp lock_customer(nil), do: nil
+  defp lock_customer(_business, nil), do: nil
 
-  defp lock_customer(customer_id) do
-    Customer |> where([c], c.id == ^customer_id) |> lock("FOR UPDATE") |> Repo.one()
+  # Scoped to the business so a ledger entry can never touch another
+  # tenant's customer, whatever id the caller passes.
+  defp lock_customer(business, customer_id) do
+    Customer
+    |> where([c], c.id == ^customer_id and c.business_id == ^business.id)
+    |> lock("FOR UPDATE")
+    |> Repo.one()
   end
 
   defp check_non_negative(balance) when balance >= 0, do: :ok

@@ -28,7 +28,7 @@ defmodule PosbdWeb.Api.SubscriptionController do
   @doc "Checkout step 1 (Phase 2 §10) - creates a Razorpay Order for `plan_id` and returns what the frontend needs to open Razorpay Checkout."
   def create_checkout(%{assigns: %{current_scope: scope}} = conn, %{"plan_id" => plan_id}) do
     with :ok <- Authorize.require(scope, "settings.manage"),
-         %Subscriptions.SubscriptionPlan{} = plan <- Subscriptions.get_plan(plan_id),
+         %Subscriptions.SubscriptionPlan{} = plan <- Subscriptions.get_purchasable_plan(plan_id),
          {:ok, checkout} <- Subscriptions.create_checkout_order(scope, plan) do
       render(conn, :checkout, checkout: checkout)
     else

@@ -6,6 +6,17 @@ defmodule PosbdWeb.Api.ImportController do
 
   action_fallback PosbdWeb.Api.FallbackController
 
+  plug PosbdWeb.Plugs.RequireFeature,
+       "migration"
+       when action in [
+              :preview_products,
+              :commit_products,
+              :preview_opening_stock,
+              :commit_opening_stock,
+              :preview_historical_bills,
+              :commit_historical_bills
+            ]
+
   def products_template(conn, _params) do
     send_csv(conn, "products_import_template.csv", Imports.products_template())
   end

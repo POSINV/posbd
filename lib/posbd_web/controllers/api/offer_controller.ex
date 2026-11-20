@@ -6,6 +6,8 @@ defmodule PosbdWeb.Api.OfferController do
 
   action_fallback PosbdWeb.Api.FallbackController
 
+  plug PosbdWeb.Plugs.RequireFeature, "offers" when action in [:create, :update]
+
   def index(%{assigns: %{current_scope: scope}} = conn, _params) do
     with :ok <- Authorize.require(scope, "offers.manage") do
       render(conn, :index, offers: Marketing.list_offers(scope))

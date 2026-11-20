@@ -22,14 +22,17 @@ defmodule Posbd.SubscriptionsTest do
       assert Lifecycle.effective_status(expired, now) == :trial_expired
     end
 
-    test "active: far out, renewal due soon, and overdue", %{now: now} do
+    test "active: far out, renewal due soon, lapsed into grace, then suspended", %{now: now} do
       far = %Subscription{status: "active", current_period_end: DateTime.add(now, 200, :day)}
       soon = %Subscription{status: "active", current_period_end: DateTime.add(now, 5, :day)}
       overdue = %Subscription{status: "active", current_period_end: DateTime.add(now, -1, :day)}
+      lapsed = %Subscription{status: "active", current_period_end: DateTime.add(now, -8, :day)}
 
       assert Lifecycle.effective_status(far, now) == :active
       assert Lifecycle.effective_status(soon, now) == :renewal_due
-      assert Lifecycle.effective_status(overdue, now) == :renewal_due
+      assert Lifecycle.effective_status(overdue, now) == :grace_period
+      assert Lifecycle.effective_status(lapsed, now) == :suspended
+      refute Lifecycle.entitled?(Lifecycle.effective_status(lapsed, now))
     end
 
     test "grace_period escalates to suspended once its deadline passes", %{now: now} do
@@ -285,7 +288,16 @@ defmodule Posbd.SubscriptionsTest do
     defp captured_payload(order_id, payment_id) do
       %{
         "event" => "payment.captured",
-        "payload" => %{"payment" => %{"entity" => %{"id" => payment_id, "order_id" => order_id}}}
+        "payload" => %{
+          "payment" => %{
+            "entity" => %{
+              "id" => payment_id,
+              "order_id" => order_id,
+              "amount" => 99_900,
+              "currency" => "INR"
+            }
+          }
+        }
       }
     end
 

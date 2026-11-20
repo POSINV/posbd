@@ -57,7 +57,8 @@ defmodule PosbdWeb.Api.BusinessController do
       {business, membership} ->
         scoped = Scope.put_business(scope, business, membership)
 
-        with {:ok, updated} <- Businesses.complete_onboarding(scoped, business) do
+        with :ok <- PosbdWeb.Api.Authorize.require(scoped, "settings.manage"),
+             {:ok, updated} <- Businesses.complete_onboarding(scoped, business) do
           render(conn, :show, business: updated, role: membership.role)
         end
     end

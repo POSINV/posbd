@@ -16,15 +16,27 @@ defmodule PosbdWeb.Api.AuthController do
     end
   end
 
-  def login(conn, %{"email" => email, "password" => password}) do
-    if user = Accounts.get_user_by_email_and_password(email, password) do
-      token = Accounts.create_api_token(user)
-      render(conn, :session, user: user, token: token)
+  def login(conn, %{"email" => email, "password" => password})
+      when is_binary(email) and is_binary(password) do
+    with :ok <- PosbdWeb.LoginThrottle.check(conn, :user, email) do
+      if user = Accounts.get_user_by_email_and_password(email, password) do
+        PosbdWeb.LoginThrottle.reset(:user, email)
+        token = Accounts.create_api_token(user)
+        render(conn, :session, user: user, token: token)
+      else
+        invalid_credentials(conn)
+      end
     else
-      conn
-      |> put_status(:unauthorized)
-      |> json(%{error: %{message: "Invalid email or password"}})
+      {:halt, conn} -> conn
     end
+  end
+
+  def login(conn, _params), do: invalid_credentials(conn)
+
+  defp invalid_credentials(conn) do
+    conn
+    |> put_status(:unauthorized)
+    |> json(%{error: %{message: "Invalid email or password"}})
   end
 
   def logout(conn, _params) do
