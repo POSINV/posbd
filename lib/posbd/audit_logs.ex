@@ -89,7 +89,7 @@ defmodule Posbd.AuditLogs do
       {:ok, date} ->
         from(l in query, where: l.inserted_at >= ^DateTime.new!(date, ~T[00:00:00]))
 
-      :error ->
+      _ ->
         query
     end
   end
@@ -102,7 +102,7 @@ defmodule Posbd.AuditLogs do
       {:ok, date} ->
         from(l in query, where: l.inserted_at <= ^DateTime.new!(date, ~T[23:59:59]))
 
-      :error ->
+      _ ->
         query
     end
   end
