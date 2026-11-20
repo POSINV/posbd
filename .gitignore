@@ -36,6 +36,6 @@ npm-debug.log
 /assets/node_modules/
 
 
-# Production secrets for "velixir env import" - never commit.
+# Local env/secrets files - never commit.
 .env
 .env.*
