@@ -91,8 +91,10 @@ config :swoosh, :api_client, false
 # elevated privileges; this is harmless to skip locally.
 config :phoenix_live_view, :colocated_js, disable_symlink_warning: true
 
-# Origins allowed to call the API (the Vue dev server).
-config :posbd, :cors_origins, ["http://localhost:5173", "http://127.0.0.1:5173"]
+# Origins allowed to call the API (the Vue dev server). Any localhost port,
+# because Vite moves to 5174, 5175, ... when 5173 is taken by another
+# project's dev server. Dev only - deployed envs use CORS_ORIGINS.
+config :posbd, :cors_origins, [~r{^http://(localhost|127\.0\.0\.1):\d+$}]
 
 # Local development never talks to Razorpay, WhatsApp (Meta) or a real
 # email provider - they only run in staging and production (see
