@@ -30,8 +30,26 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  # Hosted Postgres (e.g. Neon) requires TLS. DATABASE_SSL=true turns on a
+  # verified connection with SNI; leave it unset for a local/plain database.
+  db_ssl =
+    if System.get_env("DATABASE_SSL") in ~w(true 1) do
+      db_host = String.to_charlist(URI.parse(database_url).host)
+
+      [
+        verify: :verify_peer,
+        cacerts: :public_key.cacerts_get(),
+        server_name_indication: db_host,
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
+      ]
+    else
+      false
+    end
+
   config :posbd, Posbd.Repo,
-    # ssl: true,
+    ssl: db_ssl,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     # For machines with several cores, consider starting multiple pools of `pool_size`
